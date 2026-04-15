@@ -15,6 +15,65 @@ const CODE_VARIANTS = {
     title: 'CSV File Ingestion',
     variants: [
       {
+        approach: 'Pseudo Code',
+        icon: '\ud83d\udccb',
+        difficulty: 'Concept',
+        pros: 'Understand the logic before writing code',
+        cons: 'Not executable — blueprint only',
+        code: `ALGORITHM: CSV File Ingestion
+=============================
+
+INPUT:
+  - Source: s3://bucket/data/*.csv
+  - Format: CSV with headers
+  - Schema: auto-infer or explicit
+
+STEPS:
+  Step 1: CONNECT to cloud storage
+    - Authenticate via IAM role / service principal
+    - Verify path exists and files are accessible
+
+  Step 2: READ source files
+    - Parse CSV with header row
+    - Infer column types (string, int, double, date)
+    - Handle: multi-line values, quoted fields, escape chars
+    - Handle: encoding (UTF-8), null representations ("", "null", "NA")
+
+  Step 3: VALIDATE raw data
+    - Check row count > 0
+    - Check expected columns exist
+    - Log: file count, total rows, schema
+
+  Step 4: ENRICH with metadata
+    - Add _ingest_timestamp = current_timestamp()
+    - Add _source_file = input_file_name()
+    - Add _batch_id = unique batch identifier
+
+  Step 5: WRITE to Bronze (Delta table)
+    - Format: Delta Lake (Parquet + transaction log)
+    - Mode: overwrite (full refresh) or append (incremental)
+    - Enable schema evolution if columns change
+
+  Step 6: VERIFY write
+    - Count rows in target table
+    - Compare with source count
+    - Log success/failure to audit table
+
+OUTPUT:
+  - Target: catalog.bronze.csv_data
+  - Format: Delta Lake
+  - Partitions: none (or by date if large)
+
+ERROR HANDLING:
+  - File not found     -> log error, skip, continue
+  - Schema mismatch    -> rescue data to quarantine table
+  - Write failure      -> retry 3x with backoff, then alert
+  - Corrupt file       -> move to /mnt/quarantine/, log
+
+COMPLEXITY: O(n) where n = total rows across all CSV files
+SPACE: O(n) in memory during read, then written to disk`,
+      },
+      {
         approach: 'PySpark DataFrame API',
         icon: '\u26a1',
         difficulty: 'Beginner',
@@ -166,6 +225,50 @@ print(f"Done! {df.count()} rows written in '{mode}' mode")`,
     title: 'JSON File Ingestion',
     variants: [
       {
+        approach: 'Pseudo Code',
+        icon: '\ud83d\udccb',
+        difficulty: 'Concept',
+        pros: 'Understand nested JSON handling logic',
+        cons: 'Not executable — blueprint only',
+        code: `ALGORITHM: JSON File Ingestion
+==============================
+
+INPUT:
+  - Source: abfss://container@storage/json/
+  - Format: JSON (potentially nested)
+
+STEPS:
+  Step 1: DEFINE schema
+    - Option A: explicit StructType (recommended for production)
+    - Option B: inferSchema (ok for exploration)
+    - Handle: nested objects -> StructType
+    - Handle: arrays -> ArrayType
+
+  Step 2: READ JSON files
+    - Parse with schema enforcement
+    - Handle: multiLine JSON (one object spans multiple lines)
+    - Handle: corrupt records -> PERMISSIVE mode
+
+  Step 3: FLATTEN nested structures
+    - Extract nested fields: address.city -> city column
+    - Explode arrays: tags[] -> one row per tag
+    - Drop original nested columns
+
+  Step 4: VALIDATE
+    - Check: required fields not null
+    - Check: JSON parse success rate > 99%
+    - Route bad records to quarantine
+
+  Step 5: WRITE to Bronze Delta table
+
+FLOWCHART:
+  JSON files -> Read with schema -> Flatten nested ->
+  Validate -> [Pass] -> Write Delta
+              [Fail] -> Quarantine table
+
+COMPLEXITY: O(n * d) where n=rows, d=nesting depth`,
+      },
+      {
         approach: 'PySpark DataFrame API',
         icon: '\u26a1',
         difficulty: 'Beginner',
@@ -249,6 +352,47 @@ df.writeStream.format("delta") \\
     title: 'Parquet File Ingestion',
     variants: [
       {
+        approach: 'Pseudo Code',
+        icon: '\ud83d\udccb',
+        difficulty: 'Concept',
+        pros: 'Understand partition pruning and conversion',
+        cons: 'Not executable — blueprint only',
+        code: `ALGORITHM: Parquet File Ingestion
+=================================
+
+INPUT:
+  - Source: gs://bucket/data/year=2024/month=*/
+  - Format: Parquet (columnar, schema embedded)
+  - Partitioned: by year and month (Hive-style)
+
+STEPS:
+  Step 1: READ Parquet files
+    - Schema auto-detected from Parquet metadata
+    - Partition columns auto-discovered from path
+    - Partition pruning: only read needed partitions
+    - Predicate pushdown: filter at file level
+
+  Step 2: CONVERT types if needed
+    - Parquet types -> Spark types (usually 1:1)
+    - Timestamp handling: UTC normalization
+
+  Step 3: WRITE to Delta with partitioning
+    - Maintain same partition scheme (year/month)
+    - Or re-partition for query patterns
+
+  ALTERNATIVE: CONVERT TO DELTA (zero-copy!)
+    - If Parquet already on cloud storage
+    - Just adds Delta transaction log
+    - No data movement, instant conversion
+
+FLOWCHART:
+  Parquet -> [Already on storage?]
+    Yes -> CONVERT TO DELTA (instant, 0 bytes copied)
+    No  -> Read -> Write Delta (full copy)
+
+COMPLEXITY: O(n) for full copy, O(1) for CONVERT`,
+      },
+      {
         approach: 'PySpark DataFrame API',
         icon: '\u26a1',
         difficulty: 'Beginner',
@@ -293,7 +437,63 @@ USING DELTA LOCATION 'gs://bucket/data/';`,
 // Generate generic variants for scenarios without specific ones
 function getGenericVariants(scenario) {
   const format = scenario.title.split(' ')[0].toLowerCase();
+  const cleanTitle = scenario.title.toUpperCase().replace(/[^A-Z0-9 ]/g, '');
   return [
+    {
+      approach: 'Pseudo Code',
+      icon: '\ud83d\udccb',
+      difficulty: 'Concept',
+      pros: 'Understand logic before coding',
+      cons: 'Not executable — blueprint only',
+      code: `ALGORITHM: ${cleanTitle}
+${'='.repeat(cleanTitle.length + 11)}
+
+PURPOSE: ${scenario.desc}
+
+INPUT:
+  - Source: /mnt/landing/${format}/ (or external system)
+  - Format: ${scenario.category}
+
+STEPS:
+  Step 1: CONNECT to source
+    - Authenticate (IAM / service principal / credentials)
+    - Verify source is accessible
+    - Log connection attempt
+
+  Step 2: READ data
+    - Read from source in ${scenario.category} format
+    - Apply schema (explicit or inferred)
+    - Handle encoding, null values, bad records
+
+  Step 3: VALIDATE
+    - Check row count > 0
+    - Check schema matches expectation
+    - Check for nulls in required columns
+    - Route bad records to quarantine
+
+  Step 4: TRANSFORM (if needed)
+    - Clean column names (lowercase, no spaces)
+    - Cast data types
+    - Add metadata: _ingest_ts, _source, _batch_id
+
+  Step 5: WRITE to Bronze (Delta)
+    - Format: Delta Lake
+    - Mode: append or overwrite
+    - Verify write count matches read count
+
+  Step 6: LOG & AUDIT
+    - Record: source, target, row count, status, timestamp
+    - Alert on failure
+
+ERROR HANDLING:
+  - Source unavailable -> retry 3x, then alert
+  - Schema mismatch   -> quarantine + alert
+  - Write failure     -> retry, then manual intervention
+
+FLOWCHART:
+  Source -> Read -> Validate -> [Pass] -> Transform -> Write Delta -> Log
+                             -> [Fail] -> Quarantine -> Alert`,
+    },
     {
       approach: 'PySpark DataFrame API',
       icon: '\u26a1',

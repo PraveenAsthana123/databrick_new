@@ -6,6 +6,9 @@ const menuItems = [
     items: [
       { id: 'dashboard', icon: '📊', label: 'Dashboard' },
       { id: 'medallion', icon: '🏅', label: 'Medallion Architecture' },
+      { id: 'bronze-ops', icon: '🥉', label: 'Bronze Layer (100)' },
+      { id: 'silver-ops', icon: '🥈', label: 'Silver Layer (100)' },
+      { id: 'gold-ops', icon: '🥇', label: 'Gold Layer (100)' },
       { id: 'landing-zone', icon: '🛬', label: 'Landing Zone' },
     ],
   },

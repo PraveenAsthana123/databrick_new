@@ -14,6 +14,9 @@ const ETLScenarios = lazy(() => import('./pages/transformation/ETLScenarios'));
 const ELTScenarios = lazy(() => import('./pages/transformation/ELTScenarios'));
 const StreamIngestion = lazy(() => import('./pages/ingestion/StreamIngestion'));
 const SecurityPIIScenarios = lazy(() => import('./pages/security/SecurityPIIScenarios'));
+const BronzeOperations = lazy(() => import('./pages/medallion/BronzeOperations'));
+const SilverOperations = lazy(() => import('./pages/medallion/SilverOperations'));
+const GoldOperations = lazy(() => import('./pages/medallion/GoldOperations'));
 const Modeling = lazy(() => import('./pages/Modeling'));
 const UnityCatalog = lazy(() => import('./pages/UnityCatalog'));
 const Visualization = lazy(() => import('./pages/Visualization'));
@@ -44,6 +47,12 @@ function App() {
         return <Dashboard />;
       case 'medallion':
         return <Medallion />;
+      case 'bronze-ops':
+        return <BronzeOperations />;
+      case 'silver-ops':
+        return <SilverOperations />;
+      case 'gold-ops':
+        return <GoldOperations />;
       case 'landing-zone':
         return <LandingZone />;
       case 'ingestion-batch':

@@ -22,7 +22,8 @@ const menuItems = [
     section: 'Transformation',
     items: [
       { id: 'elt-operations', icon: '🔄', label: 'ELT Operations' },
-      { id: 'etl-operations', icon: '⚙️', label: 'ETL Transformations' },
+      { id: 'etl-scenarios', icon: '⚙️', label: 'ETL Pipelines (50)' },
+      { id: 'etl-operations', icon: '🔧', label: 'ETL Transformations' },
     ],
   },
   {

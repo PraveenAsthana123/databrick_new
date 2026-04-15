@@ -10,6 +10,7 @@ const Ingestion = lazy(() => import('./pages/Ingestion'));
 const BatchIngestion = lazy(() => import('./pages/ingestion/BatchIngestion'));
 const BatchPipelines = lazy(() => import('./pages/ingestion/BatchPipelines'));
 const GovernanceScenarios = lazy(() => import('./pages/governance/GovernanceScenarios'));
+const ETLScenarios = lazy(() => import('./pages/transformation/ETLScenarios'));
 const Modeling = lazy(() => import('./pages/Modeling'));
 const UnityCatalog = lazy(() => import('./pages/UnityCatalog'));
 const Visualization = lazy(() => import('./pages/Visualization'));
@@ -52,6 +53,8 @@ function App() {
         return <Ingestion filter="all" />;
       case 'elt-operations':
         return <ELTOperations filter="elt" />;
+      case 'etl-scenarios':
+        return <ETLScenarios />;
       case 'etl-operations':
         return <ELTOperations filter="etl" />;
       case 'modeling':

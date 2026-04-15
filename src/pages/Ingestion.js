@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getCodeVariants } from '../utils/codeVariants';
 
 const ingestionScenarios = [
   {
@@ -880,6 +881,115 @@ flattened.write.format("delta").saveAsTable("bronze.flattened_orders")`,
 const categories = [...new Set(ingestionScenarios.map((s) => s.category))];
 
 // ─── Sample data generator per scenario category ───
+// ─── Code Approaches Component ────────────────
+function CodeApproaches({ scenarioId, scenario }) {
+  const [activeApproach, setActiveApproach] = useState(0);
+  const variants = getCodeVariants(scenarioId, scenario);
+
+  return (
+    <div
+      style={{
+        marginTop: '1rem',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        style={{
+          padding: '0.6rem 0.8rem',
+          background: '#f8f9fa',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <strong style={{ fontSize: '0.85rem' }}>{variants.length} Code Approaches</strong>
+        <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+          Click each tab to see different ways to write this
+        </span>
+      </div>
+
+      {/* Approach Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+        {variants.map((v, i) => (
+          <button
+            key={i}
+            onClick={() => setActiveApproach(i)}
+            style={{
+              padding: '0.5rem 0.8rem',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.75rem',
+              background: activeApproach === i ? '#fff' : '#f8f9fa',
+              borderBottom:
+                activeApproach === i ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeApproach === i ? 'var(--primary)' : 'var(--text-secondary)',
+              fontWeight: activeApproach === i ? 600 : 400,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {v.icon} {v.approach}
+          </button>
+        ))}
+      </div>
+
+      {/* Active Approach Detail */}
+      {variants[activeApproach] && (
+        <div style={{ padding: '0.8rem' }}>
+          {/* Meta: difficulty, pros, cons */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              marginBottom: '0.75rem',
+              flexWrap: 'wrap',
+              fontSize: '0.75rem',
+            }}
+          >
+            <span>
+              <b>Difficulty:</b>{' '}
+              <span
+                style={{
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '3px',
+                  fontSize: '0.7rem',
+                  background:
+                    variants[activeApproach].difficulty === 'Beginner'
+                      ? '#dcfce7'
+                      : variants[activeApproach].difficulty === 'Intermediate'
+                        ? '#fef3c7'
+                        : '#fee2e2',
+                  color:
+                    variants[activeApproach].difficulty === 'Beginner'
+                      ? '#166534'
+                      : variants[activeApproach].difficulty === 'Intermediate'
+                        ? '#92400e'
+                        : '#991b1b',
+                }}
+              >
+                {variants[activeApproach].difficulty}
+              </span>
+            </span>
+            <span style={{ color: '#166534' }}>
+              <b>Pros:</b> {variants[activeApproach].pros}
+            </span>
+            <span style={{ color: '#991b1b' }}>
+              <b>Cons:</b> {variants[activeApproach].cons}
+            </span>
+          </div>
+
+          {/* Code */}
+          <div className="code-block" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+            {variants[activeApproach].code}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function getScenarioData(scenario) {
   const dataMap = {
     'CSV File Ingestion': {
@@ -1427,22 +1537,8 @@ function Ingestion() {
                     )}
                   </div>
 
-                  {/* Code block */}
-                  <details>
-                    <summary
-                      style={{
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        color: 'var(--text-secondary)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      View PySpark Code
-                    </summary>
-                    <div className="code-block" style={{ marginTop: '0.5rem' }}>
-                      {scenario.code}
-                    </div>
-                  </details>
+                  {/* Code Approaches — Multiple Ways */}
+                  <CodeApproaches scenarioId={scenario.id} scenario={scenario} />
                 </div>
               )}
             </div>

@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { errorTracker } from './utils/errorTracker';
+
+// Initialize error tracking (console, DOM, CSS, network, performance)
+if (process.env.NODE_ENV === 'development') {
+  errorTracker.init();
+  // Expose to browser console for debugging: window.__errors.getSummary()
+  window.__errors = errorTracker;
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -11,7 +19,4 @@ root.render(
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

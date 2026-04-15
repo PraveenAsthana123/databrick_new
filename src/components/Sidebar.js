@@ -14,7 +14,7 @@ const menuItems = [
     items: [
       { id: 'ingestion-batch', icon: '📦', label: 'Batch Ingestion (50)' },
       { id: 'batch-pipelines', icon: '🔗', label: 'Batch Pipelines (50)' },
-      { id: 'ingestion-stream', icon: '🌊', label: 'Stream Ingestion' },
+      { id: 'stream-scenarios', icon: '🌊', label: 'Stream Pipelines (50)' },
       { id: 'ingestion-all', icon: '📥', label: 'All Ingestion (55)' },
     ],
   },

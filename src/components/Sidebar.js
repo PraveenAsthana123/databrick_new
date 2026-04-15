@@ -48,6 +48,7 @@ const menuItems = [
     section: 'Data & Tools',
     items: [
       { id: 'data-storage', icon: '🗄️', label: 'Data Storage' },
+      { id: 'upload-docs', icon: '📂', label: 'Upload Documents' },
       { id: 'download-data', icon: '⬇️', label: 'Download Data' },
       { id: 'simulation', icon: '🧪', label: 'Simulation Tools' },
     ],

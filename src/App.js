@@ -22,6 +22,7 @@ const Notebooks = lazy(() => import('./pages/Notebooks'));
 const Jobs = lazy(() => import('./pages/Jobs'));
 const SparkUI = lazy(() => import('./pages/SparkUI'));
 const DataStorage = lazy(() => import('./pages/DataStorage'));
+const UploadDocs = lazy(() => import('./pages/UploadDocs'));
 const DownloadData = lazy(() => import('./pages/DownloadData'));
 const SimulationTools = lazy(() => import('./pages/SimulationTools'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -70,6 +71,8 @@ function App() {
         return <SparkUI />;
       case 'data-storage':
         return <DataStorage />;
+      case 'upload-docs':
+        return <UploadDocs />;
       case 'download-data':
         return <DownloadData />;
       case 'simulation':

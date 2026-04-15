@@ -27,6 +27,8 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,css,json,md}\"",
     "validate": "npm run lint && npm run format:check && npm test -- --watchAll=false",
     "pre-merge": "npm run validate && npm run build",
+    "test:report": "react-scripts test --watchAll=false --verbose 2>&1 | tee data/test-report-$(date +%Y%m%d-%H%M%S).txt",
+    "test:coverage": "react-scripts test --watchAll=false --coverage",
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
@@ -60,7 +62,9 @@
       ],
       "no-eval": "error",
       "no-implied-eval": "error",
-      "no-useless-escape": "off"
+      "no-useless-escape": "off",
+      "testing-library/no-container": "off",
+      "testing-library/no-node-access": "off"
     }
   },
   "lint-staged": {

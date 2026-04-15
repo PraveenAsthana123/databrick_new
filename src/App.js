@@ -1,23 +1,112 @@
-import logo from './logo.svg';
+import { useState, lazy, Suspense } from 'react';
 import './App.css';
+import Sidebar from './components/Sidebar';
+
+// Lazy load all pages for performance
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Medallion = lazy(() => import('./pages/Medallion'));
+const LandingZone = lazy(() => import('./pages/LandingZone'));
+const Ingestion = lazy(() => import('./pages/Ingestion'));
+const Modeling = lazy(() => import('./pages/Modeling'));
+const UnityCatalog = lazy(() => import('./pages/UnityCatalog'));
+const Visualization = lazy(() => import('./pages/Visualization'));
+const ELTOperations = lazy(() => import('./pages/ELTOperations'));
+const PipelineBuilder = lazy(() => import('./pages/PipelineBuilder'));
+const DataTesting = lazy(() => import('./pages/DataTesting'));
+const SecurityGovernance = lazy(() => import('./pages/SecurityGovernance'));
+const XAI = lazy(() => import('./pages/XAI'));
+const RAGIntegration = lazy(() => import('./pages/RAGIntegration'));
+const TerraformAzure = lazy(() => import('./pages/TerraformAzure'));
+const Clusters = lazy(() => import('./pages/Clusters'));
+const Notebooks = lazy(() => import('./pages/Notebooks'));
+const Jobs = lazy(() => import('./pages/Jobs'));
+const SparkUI = lazy(() => import('./pages/SparkUI'));
+const DataStorage = lazy(() => import('./pages/DataStorage'));
+const DownloadData = lazy(() => import('./pages/DownloadData'));
+const SimulationTools = lazy(() => import('./pages/SimulationTools'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 function App() {
+  const [activePage, setActivePage] = useState('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const renderPage = () => {
+    switch (activePage) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'medallion':
+        return <Medallion />;
+      case 'landing-zone':
+        return <LandingZone />;
+      case 'ingestion':
+        return <Ingestion />;
+      case 'modeling':
+        return <Modeling />;
+      case 'unity-catalog':
+        return <UnityCatalog />;
+      case 'visualization':
+        return <Visualization />;
+      case 'elt-operations':
+        return <ELTOperations />;
+      case 'pipelines':
+        return <PipelineBuilder />;
+      case 'data-testing':
+        return <DataTesting />;
+      case 'security':
+        return <SecurityGovernance />;
+      case 'xai':
+        return <XAI />;
+      case 'rag':
+        return <RAGIntegration />;
+      case 'terraform':
+        return <TerraformAzure />;
+      case 'clusters':
+        return <Clusters />;
+      case 'notebooks':
+        return <Notebooks />;
+      case 'jobs':
+        return <Jobs />;
+      case 'spark-ui':
+        return <SparkUI />;
+      case 'data-storage':
+        return <DataStorage />;
+      case 'download-data':
+        return <DownloadData />;
+      case 'simulation':
+        return <SimulationTools />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <div className="app">
+      <header className="topbar">
+        <button className="topbar-toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+          ☰
+        </button>
+        <div className="topbar-brand">
+          <span className="brand-icon">◆</span> Databricks PySpark Environment
+        </div>
+        <div className="topbar-actions">
+          <span className="cluster-status">
+            <span className="status-dot running"></span> Cluster Active
+          </span>
+          <span className="topbar-user">⚙ Admin</span>
+        </div>
       </header>
+      <div className="app-body">
+        <Sidebar activePage={activePage} onNavigate={setActivePage} collapsed={sidebarCollapsed} />
+        <main className={`main-content ${sidebarCollapsed ? 'expanded' : ''}`}>
+          <Suspense
+            fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>}
+          >
+            {renderPage()}
+          </Suspense>
+        </main>
+      </div>
     </div>
   );
 }

@@ -16,22 +16,32 @@ export function useApi(endpoint, options = {}) {
   const { immediate = true } = options;
 
   const fetchData = useCallback(async () => {
+    let cancelled = false;
     try {
       setLoading(true);
       setError(null);
       const result = await api.get(endpoint);
-      setData(result);
+      if (!cancelled) setData(result);
     } catch (err) {
-      setError(err.message || 'Failed to fetch data');
+      if (!cancelled) setError(err.message || 'Failed to fetch data');
     } finally {
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [endpoint]);
 
   useEffect(() => {
+    let cleanup;
     if (immediate) {
-      fetchData();
+      cleanup = fetchData();
     }
+    return () => {
+      if (cleanup && typeof cleanup.then === 'function') {
+        cleanup.then((fn) => fn && fn());
+      }
+    };
   }, [fetchData, immediate]);
 
   return { data, loading, error, refetch: fetchData };

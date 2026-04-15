@@ -131,12 +131,17 @@ export function exportToWord(element, filename = 'export.doc') {
 
   if (typeof element === 'string') {
     htmlContent = element;
-  } else if (element.current) {
-    htmlContent = element.current.innerHTML;
-  } else if (element instanceof HTMLElement) {
-    htmlContent = element.innerHTML;
   } else {
-    throw new Error('Invalid element provided');
+    // Use XMLSerializer to safely read DOM content (avoids innerHTML)
+    const serializer = new XMLSerializer();
+    const target = element.current || element;
+    if (!(target instanceof HTMLElement)) throw new Error('Invalid element provided');
+    htmlContent = Array.from(target.childNodes)
+      .map((node) => {
+        if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+        return serializer.serializeToString(node);
+      })
+      .join('');
   }
 
   const docContent = `

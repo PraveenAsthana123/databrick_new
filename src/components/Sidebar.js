@@ -10,13 +10,26 @@ const menuItems = [
     ],
   },
   {
+    section: 'Ingestion',
+    items: [
+      { id: 'ingestion-batch', icon: '📦', label: 'Batch Ingestion' },
+      { id: 'ingestion-stream', icon: '🌊', label: 'Stream Ingestion' },
+      { id: 'ingestion-all', icon: '📥', label: 'All Ingestion (55)' },
+    ],
+  },
+  {
+    section: 'Transformation',
+    items: [
+      { id: 'elt-operations', icon: '🔄', label: 'ELT Operations' },
+      { id: 'etl-operations', icon: '⚙️', label: 'ETL Transformations' },
+    ],
+  },
+  {
     section: 'Scenarios (50+)',
     items: [
-      { id: 'ingestion', icon: '📥', label: 'Ingestion (55)' },
       { id: 'modeling', icon: '🧠', label: 'Modeling (55)' },
       { id: 'unity-catalog', icon: '📚', label: 'Unity Catalog (55)' },
       { id: 'visualization', icon: '📈', label: 'Visualization (55)' },
-      { id: 'elt-operations', icon: '🔄', label: 'ELT / SCD / CDC' },
       { id: 'data-testing', icon: '✅', label: 'Data Testing (55)' },
     ],
   },

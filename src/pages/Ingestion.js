@@ -878,8 +878,6 @@ flattened.write.format("delta").saveAsTable("bronze.flattened_orders")`,
   },
 ];
 
-const categories = [...new Set(ingestionScenarios.map((s) => s.category))];
-
 // ─── Sample data generator per scenario category ───
 // ─── Code Approaches Component ────────────────
 function CodeApproaches({ scenarioId, scenario }) {
@@ -1226,20 +1224,53 @@ function MiniTable({ rows, title, badge, badgeColor }) {
   );
 }
 
-function Ingestion() {
+// Category groups for filtering
+const BATCH_CATEGORIES = [
+  'Batch - File',
+  'Batch - Database',
+  'Cloud Storage',
+  'API',
+  'External',
+  'Data Format',
+];
+const STREAM_CATEGORIES = ['Streaming', 'CDC', 'Transform'];
+
+function Ingestion({ filter = 'all' }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [processedIds, setProcessedIds] = useState({});
   const [processingId, setProcessingId] = useState(null);
 
-  const filtered = ingestionScenarios.filter((s) => {
+  // Pre-filter by batch/stream/all
+  const preFiltered = ingestionScenarios.filter((s) => {
+    if (filter === 'batch') return BATCH_CATEGORIES.includes(s.category);
+    if (filter === 'stream') return STREAM_CATEGORIES.includes(s.category);
+    return true;
+  });
+
+  const activeCategories = [...new Set(preFiltered.map((s) => s.category))];
+
+  const filtered = preFiltered.filter((s) => {
     const matchCategory = selectedCategory === 'All' || s.category === selectedCategory;
     const matchSearch =
       s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.desc.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCategory && matchSearch;
   });
+
+  const pageTitle =
+    filter === 'batch'
+      ? 'Batch Ingestion'
+      : filter === 'stream'
+        ? 'Stream Ingestion'
+        : 'All Ingestion Scenarios';
+  const pageDesc =
+    filter === 'batch'
+      ? `${preFiltered.length} batch ingestion patterns — File, Database, API, Cloud Storage`
+      : filter === 'stream'
+        ? `${preFiltered.length} streaming patterns — Kafka, CDC, Auto Loader, Real-time`
+        : `${ingestionScenarios.length} PySpark data ingestion patterns — Input, Process, Output for each`;
 
   const runProcess = (scenarioId) => {
     setProcessingId(scenarioId);
@@ -1264,11 +1295,8 @@ function Ingestion() {
     <div>
       <div className="page-header">
         <div>
-          <h1>Ingestion Scenarios</h1>
-          <p>
-            {ingestionScenarios.length} PySpark data ingestion patterns — Input, Process, Output for
-            each
-          </p>
+          <h1>{pageTitle}</h1>
+          <p>{pageDesc}</p>
         </div>
       </div>
 
@@ -1288,15 +1316,15 @@ function Ingestion() {
             onChange={(e) => setSelectedCategory(e.target.value)}
             style={{ maxWidth: '200px' }}
           >
-            <option value="All">All Categories ({ingestionScenarios.length})</option>
-            {categories.map((cat) => (
+            <option value="All">All Categories ({preFiltered.length})</option>
+            {activeCategories.map((cat) => (
               <option key={cat} value={cat}>
-                {cat} ({ingestionScenarios.filter((s) => s.category === cat).length})
+                {cat} ({preFiltered.filter((s) => s.category === cat).length})
               </option>
             ))}
           </select>
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            Showing {filtered.length} of {ingestionScenarios.length}
+            Showing {filtered.length} of {preFiltered.length}
           </span>
         </div>
       </div>

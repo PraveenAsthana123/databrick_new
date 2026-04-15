@@ -2542,29 +2542,41 @@ const tabs = [
   },
 ];
 
-function ELTOperations() {
-  const [activeTab, setActiveTab] = useState('elt');
+const ELT_TABS = ['elt', 'scd', 'cdc'];
+const ETL_TABS = ['dataframe', 'delta'];
+
+function ELTOperations({ filter = 'elt' }) {
+  const filteredTabs =
+    filter === 'etl'
+      ? tabs.filter((t) => ETL_TABS.includes(t.key))
+      : filter === 'elt'
+        ? tabs.filter((t) => ELT_TABS.includes(t.key))
+        : tabs;
+
+  const [activeTab, setActiveTab] = useState(filteredTabs[0]?.key || 'elt');
   const [expandedId, setExpandedId] = useState(null);
 
-  const currentTab = tabs.find((t) => t.key === activeTab);
+  const currentTab = filteredTabs.find((t) => t.key === activeTab) || filteredTabs[0];
   const scenarios = currentTab ? currentTab.data : [];
 
-  const totalScenarios = tabs.reduce((sum, t) => sum + t.data.length, 0);
+  const totalScenarios = filteredTabs.reduce((sum, t) => sum + t.data.length, 0);
+  const pageTitle = filter === 'etl' ? 'ETL Transformations' : 'ELT Operations';
+  const pageDesc =
+    filter === 'etl'
+      ? `${totalScenarios} scenarios — DataFrame operations, Delta Table operations`
+      : `${totalScenarios} scenarios — ELT transactions, SCD types, CDC methods`;
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1>ELT Operations</h1>
-          <p>
-            {totalScenarios} scenarios covering ELT transactions, SCD, CDC, DataFrame, and Delta
-            Table operations
-          </p>
+          <h1>{pageTitle}</h1>
+          <p>{pageDesc}</p>
         </div>
       </div>
 
       <div className="tabs" style={{ marginBottom: '1.5rem' }}>
-        {tabs.map((tab) => (
+        {filteredTabs.map((tab) => (
           <button
             key={tab.key}
             className={`tab ${activeTab === tab.key ? 'active' : ''}`}

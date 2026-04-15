@@ -39,16 +39,22 @@ function App() {
         return <Medallion />;
       case 'landing-zone':
         return <LandingZone />;
-      case 'ingestion':
-        return <Ingestion />;
+      case 'ingestion-batch':
+        return <Ingestion filter="batch" />;
+      case 'ingestion-stream':
+        return <Ingestion filter="stream" />;
+      case 'ingestion-all':
+        return <Ingestion filter="all" />;
+      case 'elt-operations':
+        return <ELTOperations filter="elt" />;
+      case 'etl-operations':
+        return <ELTOperations filter="etl" />;
       case 'modeling':
         return <Modeling />;
       case 'unity-catalog':
         return <UnityCatalog />;
       case 'visualization':
         return <Visualization />;
-      case 'elt-operations':
-        return <ELTOperations />;
       case 'pipelines':
         return <PipelineBuilder />;
       case 'data-testing':

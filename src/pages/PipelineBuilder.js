@@ -275,6 +275,100 @@ const SCHEDULE_OPTIONS = [
   { value: 'monthly', label: 'Monthly (1st at Midnight)', cron: '0 0 1 * *' },
 ];
 
+// ─── Test Suite Definitions ───────────────────
+const TEST_SUITES = [
+  {
+    id: 'row_count',
+    name: 'Row Count Check',
+    desc: 'Verify source vs target row counts match',
+    severity: 'critical',
+  },
+  {
+    id: 'null_check',
+    name: 'Null Value Check',
+    desc: 'Check for unexpected NULL values in key columns',
+    severity: 'critical',
+  },
+  {
+    id: 'duplicate_check',
+    name: 'Duplicate Check',
+    desc: 'Verify no duplicate records in primary key',
+    severity: 'critical',
+  },
+  {
+    id: 'schema_validation',
+    name: 'Schema Validation',
+    desc: 'Verify column names, types, and order match expected schema',
+    severity: 'critical',
+  },
+  {
+    id: 'data_type_check',
+    name: 'Data Type Check',
+    desc: 'Validate data types (numeric, date, string) are correct',
+    severity: 'high',
+  },
+  {
+    id: 'referential_integrity',
+    name: 'Referential Integrity',
+    desc: 'Check foreign key relationships are valid',
+    severity: 'high',
+  },
+  {
+    id: 'range_check',
+    name: 'Range / Boundary Check',
+    desc: 'Validate values are within expected min/max range',
+    severity: 'high',
+  },
+  {
+    id: 'freshness_check',
+    name: 'Data Freshness',
+    desc: 'Verify data timestamp is within acceptable lag',
+    severity: 'medium',
+  },
+  {
+    id: 'completeness',
+    name: 'Completeness Check',
+    desc: 'Verify all required fields are populated',
+    severity: 'medium',
+  },
+  {
+    id: 'format_check',
+    name: 'Format Validation',
+    desc: 'Check email, phone, date formats are valid',
+    severity: 'medium',
+  },
+  {
+    id: 'checksum',
+    name: 'Checksum / Hash Match',
+    desc: 'Compare source vs target data checksums',
+    severity: 'high',
+  },
+  {
+    id: 'business_rule',
+    name: 'Business Rule Validation',
+    desc: 'Apply domain-specific rules (e.g., amount > 0, status in allowed list)',
+    severity: 'critical',
+  },
+  {
+    id: 'reconciliation',
+    name: 'Source-Target Reconciliation',
+    desc: 'Full row-level comparison between source and target',
+    severity: 'high',
+  },
+  {
+    id: 'scd_validation',
+    name: 'SCD History Validation',
+    desc: 'Verify SCD Type 2 history chain is unbroken',
+    severity: 'medium',
+  },
+  {
+    id: 'performance',
+    name: 'Performance Benchmark',
+    desc: 'Check query execution time is within SLA',
+    severity: 'low',
+  },
+];
+
 function PipelineBuilder() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
@@ -292,7 +386,12 @@ function PipelineBuilder() {
     timeout: 30,
   });
 
+  // Test reports state
+  const [testReports, setTestReports] = useState([]);
+  const [expandedReport, setExpandedReport] = useState(null);
+
   const runIdCounter = useRef(1);
+  const testIdCounter = useRef(1);
 
   const filtered = pipelines.filter((p) => {
     const matchCat = selectedCategory === 'All' || p.category === selectedCategory;
@@ -369,10 +468,141 @@ function PipelineBuilder() {
     simulateStages(runId, job.id, stages, 0);
   };
 
+  // ─── Auto-trigger tests after job completes ──
+  const runTestSuite = (runId, pipelineTitle, trigger) => {
+    const reportId = `test_${testIdCounter.current++}`;
+    const startTime = new Date().toISOString();
+
+    const report = {
+      id: reportId,
+      runId,
+      pipelineTitle,
+      trigger, // 'auto' or 'manual'
+      startTime,
+      endTime: null,
+      status: 'running',
+      tests: TEST_SUITES.map((t) => ({
+        ...t,
+        status: 'pending',
+        result: null,
+        duration: null,
+        details: null,
+      })),
+      summary: null,
+    };
+
+    setTestReports((prev) => [report, ...prev]);
+
+    // Simulate running each test sequentially
+    simulateTests(reportId, 0);
+  };
+
+  const simulateTests = (reportId, testIdx) => {
+    if (testIdx >= TEST_SUITES.length) {
+      // All tests done — generate summary
+      setTestReports((prev) =>
+        prev.map((r) => {
+          if (r.id !== reportId) return r;
+          const passed = r.tests.filter((t) => t.status === 'passed').length;
+          const failed = r.tests.filter((t) => t.status === 'failed').length;
+          const warnings = r.tests.filter((t) => t.status === 'warning').length;
+          return {
+            ...r,
+            status: failed > 0 ? 'failed' : warnings > 0 ? 'warning' : 'passed',
+            endTime: new Date().toISOString(),
+            summary: {
+              total: TEST_SUITES.length,
+              passed,
+              failed,
+              warnings,
+              score: Math.round((passed / TEST_SUITES.length) * 100),
+            },
+          };
+        })
+      );
+      return;
+    }
+
+    const duration = Math.floor(Math.random() * 800) + 200;
+    const rand = Math.random();
+    // 75% pass, 15% fail, 10% warning
+    const result = rand < 0.75 ? 'passed' : rand < 0.9 ? 'failed' : 'warning';
+
+    const detailsMap = {
+      passed: 'All checks passed. Data is consistent.',
+      failed: 'Validation failed. Mismatch detected — review data.',
+      warning: 'Minor issue detected. Within acceptable threshold.',
+    };
+
+    const metricsMap = {
+      row_count: {
+        source: 15243,
+        target: result === 'failed' ? 15100 : 15243,
+        delta: result === 'failed' ? -143 : 0,
+      },
+      null_check: {
+        columns_checked: 12,
+        nulls_found: result === 'failed' ? 45 : 0,
+        threshold: '0%',
+      },
+      duplicate_check: { total_rows: 15243, duplicates: result === 'failed' ? 23 : 0 },
+      schema_validation: {
+        expected_cols: 15,
+        actual_cols: result === 'failed' ? 14 : 15,
+        missing: result === 'failed' ? ['updated_at'] : [],
+      },
+      data_type_check: { columns: 15, type_mismatches: result === 'failed' ? 2 : 0 },
+      referential_integrity: { fk_checks: 5, violations: result === 'failed' ? 1 : 0 },
+      range_check: { checks: 8, out_of_range: result === 'failed' ? 3 : 0 },
+      freshness_check: {
+        last_update: new Date().toISOString(),
+        lag_minutes: result === 'warning' ? 35 : 2,
+        sla_minutes: 30,
+      },
+      completeness: { required_fields: 10, populated: result === 'failed' ? 8 : 10 },
+      format_check: { records_checked: 15243, format_errors: result === 'failed' ? 87 : 0 },
+      checksum: { source_hash: 'a3f2c1', target_hash: result === 'failed' ? 'b4e3d2' : 'a3f2c1' },
+      business_rule: { rules: 6, violations: result === 'failed' ? 2 : 0 },
+      reconciliation: {
+        matched: result === 'failed' ? 14800 : 15243,
+        unmatched: result === 'failed' ? 443 : 0,
+      },
+      scd_validation: { records: 5000, broken_chains: result === 'failed' ? 12 : 0 },
+      performance: { query_time_ms: result === 'warning' ? 4500 : 850, sla_ms: 3000 },
+    };
+
+    setTimeout(() => {
+      setTestReports((prev) =>
+        prev.map((r) => {
+          if (r.id !== reportId) return r;
+          const updatedTests = r.tests.map((t, i) => {
+            if (i === testIdx) {
+              return {
+                ...t,
+                status: result,
+                result: detailsMap[result],
+                duration,
+                details: metricsMap[t.id] || null,
+              };
+            }
+            if (i === testIdx + 1) return { ...t, status: 'running' };
+            return t;
+          });
+          // Mark first test as running
+          if (testIdx === 0) updatedTests[0].status = result;
+          return { ...r, tests: updatedTests };
+        })
+      );
+      simulateTests(reportId, testIdx + 1);
+    }, duration);
+  };
+
   const simulateStages = (runId, jobId, stages, stageIdx) => {
     if (stageIdx >= stages.length) {
-      // Job completed
+      // Job completed — auto-trigger test suite
       const endTime = new Date().toISOString();
+      const pipelineTitle = jobRuns.find((r) => r.id === runId)?.pipelineTitle || 'Unknown';
+
       setJobRuns((prev) =>
         prev.map((r) =>
           r.id === runId
@@ -381,7 +611,11 @@ function PipelineBuilder() {
                 status: 'completed',
                 endTime,
                 currentStage: stages.length,
-                logs: [...r.logs, `[${formatTime(endTime)}] Job completed successfully`],
+                logs: [
+                  ...r.logs,
+                  `[${formatTime(endTime)}] Job completed successfully`,
+                  `[${formatTime(endTime)}] Auto-triggering test suite...`,
+                ],
               }
             : r
         )
@@ -389,6 +623,11 @@ function PipelineBuilder() {
       setJobs((prev) =>
         prev.map((j) => (j.id === jobId ? { ...j, status: j.cron ? 'scheduled' : 'completed' } : j))
       );
+
+      // AUTO-TRIGGER: Start test suite after 500ms delay
+      setTimeout(() => {
+        runTestSuite(runId, pipelineTitle, 'auto');
+      }, 500);
       return;
     }
 
@@ -488,6 +727,40 @@ function PipelineBuilder() {
     exportToJSON(jobs, `pipeline-jobs-${new Date().toISOString().slice(0, 10)}.json`);
   };
 
+  const downloadTestReport = (report) => {
+    const data = report.tests.map((t) => ({
+      test_name: t.name,
+      severity: t.severity,
+      status: t.status,
+      result: t.result || '',
+      duration_ms: t.duration || '',
+      details: t.details ? JSON.stringify(t.details) : '',
+    }));
+    exportToCSV(
+      data,
+      `test-report-${report.pipelineTitle.replace(/[^a-zA-Z0-9]/g, '_')}-${new Date().toISOString().slice(0, 19).replace(/:/g, '')}.csv`
+    );
+  };
+
+  const downloadAllTestReports = () => {
+    const data = testReports.flatMap((r) =>
+      r.tests.map((t) => ({
+        report_id: r.id,
+        pipeline: r.pipelineTitle,
+        trigger: r.trigger,
+        report_status: r.status,
+        test_name: t.name,
+        severity: t.severity,
+        status: t.status,
+        result: t.result || '',
+        duration_ms: t.duration || '',
+        timestamp: r.startTime,
+      }))
+    );
+    if (data.length > 0)
+      exportToCSV(data, `all-test-reports-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
   // ─── Helpers ───────────────────────────────
   function formatTime(iso) {
     return new Date(iso).toLocaleTimeString();
@@ -551,6 +824,12 @@ function PipelineBuilder() {
           onClick={() => setActiveTab('runs')}
         >
           Run History ({jobRuns.length})
+        </button>
+        <button
+          className={`tab ${activeTab === 'tests' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tests')}
+        >
+          Test Reports ({testReports.length})
         </button>
       </div>
 
@@ -929,6 +1208,225 @@ function PipelineBuilder() {
                   </details>
                 </div>
               ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ═══ TAB: Test Reports ═══ */}
+      {activeTab === 'tests' && (
+        <div>
+          {testReports.length === 0 ? (
+            <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
+                No test reports yet
+              </p>
+              <p
+                style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.5rem' }}
+              >
+                Tests auto-run after each pipeline job completes, or run manually from Run History
+              </p>
+            </div>
+          ) : (
+            <>
+              <div
+                style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}
+              >
+                <button className="btn btn-secondary btn-sm" onClick={downloadAllTestReports}>
+                  Download All Reports (CSV)
+                </button>
+                <span
+                  style={{
+                    marginLeft: 'auto',
+                    fontSize: '0.85rem',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
+                  {testReports.filter((r) => r.status === 'passed').length} passed |{' '}
+                  {testReports.filter((r) => r.status === 'failed').length} failed |{' '}
+                  {testReports.filter((r) => r.status === 'running').length} running
+                </span>
+              </div>
+              {testReports.map((report) => {
+                const isExpanded = expandedReport === report.id;
+                return (
+                  <div key={report.id} className="card" style={{ marginBottom: '0.75rem' }}>
+                    {/* Report Header */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => setExpandedReport(isExpanded ? null : report.id)}
+                    >
+                      <div>
+                        <strong>{report.pipelineTitle}</strong>
+                        <span
+                          className={`badge ${report.status === 'passed' ? 'success' : report.status === 'failed' ? 'failed' : report.status === 'warning' ? 'pending' : 'running'}`}
+                          style={{ marginLeft: '0.5rem' }}
+                        >
+                          {report.status}
+                        </span>
+                        <span
+                          className={`badge ${report.trigger === 'auto' ? 'completed' : 'pending'}`}
+                          style={{ marginLeft: '0.25rem' }}
+                        >
+                          {report.trigger === 'auto' ? 'Auto-triggered' : 'Manual'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        {report.summary && (
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                            Score:{' '}
+                            <span
+                              style={{
+                                color:
+                                  report.summary.score >= 80
+                                    ? 'var(--success)'
+                                    : report.summary.score >= 60
+                                      ? 'var(--warning)'
+                                      : 'var(--error)',
+                              }}
+                            >
+                              {report.summary.score}%
+                            </span>{' '}
+                            ({report.summary.passed}/{report.summary.total} passed)
+                          </span>
+                        )}
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                          {new Date(report.startTime).toLocaleString()}
+                        </span>
+                        <span>{isExpanded ? '\u25BC' : '\u25B6'}</span>
+                      </div>
+                    </div>
+
+                    {/* Summary Bar */}
+                    {report.summary && (
+                      <div className="progress-bar" style={{ marginTop: '0.75rem' }}>
+                        <div
+                          className={`progress-fill ${report.summary.score >= 80 ? 'green' : report.summary.score >= 60 ? 'orange' : 'red'}`}
+                          style={{ width: `${report.summary.score}%` }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Expanded: Individual Tests */}
+                    {isExpanded && (
+                      <div style={{ marginTop: '1rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => downloadTestReport(report)}
+                          >
+                            Download This Report (CSV)
+                          </button>
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() =>
+                              runTestSuite(report.runId, report.pipelineTitle, 'manual')
+                            }
+                          >
+                            Re-run Tests
+                          </button>
+                        </div>
+                        <div className="table-wrapper">
+                          <table>
+                            <thead>
+                              <tr>
+                                <th>Test</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>Result</th>
+                                <th>Details</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {report.tests.map((test) => (
+                                <tr
+                                  key={test.id}
+                                  style={{
+                                    background:
+                                      test.status === 'failed'
+                                        ? '#fef2f2'
+                                        : test.status === 'warning'
+                                          ? '#fffbeb'
+                                          : undefined,
+                                  }}
+                                >
+                                  <td>
+                                    <strong style={{ fontSize: '0.85rem' }}>{test.name}</strong>
+                                    <br />
+                                    <span
+                                      style={{
+                                        fontSize: '0.75rem',
+                                        color: 'var(--text-secondary)',
+                                      }}
+                                    >
+                                      {test.desc}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <span
+                                      className={`badge ${test.severity === 'critical' ? 'failed' : test.severity === 'high' ? 'pending' : test.severity === 'medium' ? 'completed' : 'success'}`}
+                                    >
+                                      {test.severity}
+                                    </span>
+                                  </td>
+                                  <td>
+                                    <span
+                                      className={`badge ${test.status === 'passed' ? 'success' : test.status === 'failed' ? 'failed' : test.status === 'warning' ? 'pending' : test.status === 'running' ? 'running' : 'stopped'}`}
+                                    >
+                                      {test.status === 'running' ? '\u25B6 running' : test.status}
+                                    </span>
+                                  </td>
+                                  <td>{test.duration ? `${test.duration}ms` : '\u2014'}</td>
+                                  <td style={{ fontSize: '0.8rem', maxWidth: '200px' }}>
+                                    {test.result || '\u2014'}
+                                  </td>
+                                  <td
+                                    style={{
+                                      fontSize: '0.75rem',
+                                      fontFamily: 'monospace',
+                                      maxWidth: '250px',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                    }}
+                                  >
+                                    {test.details ? (
+                                      <details>
+                                        <summary style={{ cursor: 'pointer' }}>
+                                          View metrics
+                                        </summary>
+                                        <pre
+                                          style={{
+                                            background: '#f5f5f5',
+                                            padding: '0.5rem',
+                                            borderRadius: '4px',
+                                            marginTop: '0.25rem',
+                                            fontSize: '0.7rem',
+                                            whiteSpace: 'pre-wrap',
+                                          }}
+                                        >
+                                          {JSON.stringify(test.details, null, 2)}
+                                        </pre>
+                                      </details>
+                                    ) : (
+                                      '\u2014'
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </>
           )}
         </div>

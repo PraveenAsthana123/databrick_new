@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { exportToCSV, exportToJSON } from '../utils/fileExport';
+import { getSampleData } from '../utils/sampleData';
+import DataPreview from '../components/common/DataPreview';
 
 const pipelines = [
   {
@@ -389,6 +391,7 @@ function PipelineBuilder() {
   // Test reports state
   const [testReports, setTestReports] = useState([]);
   const [expandedReport, setExpandedReport] = useState(null);
+  const [previewId, setPreviewId] = useState(null);
 
   const runIdCounter = useRef(1);
   const testIdCounter = useRef(1);
@@ -949,8 +952,19 @@ function PipelineBuilder() {
                   >
                     Schedule
                   </button>
+                  <button
+                    className="btn btn-sm"
+                    style={{ background: '#eff6ff', color: '#1e40af' }}
+                    onClick={() => setPreviewId(previewId === p.id ? null : p.id)}
+                  >
+                    {previewId === p.id ? 'Hide Data' : 'Data Preview'}
+                  </button>
                 </div>
               </div>
+              {/* Data Preview: Before vs After */}
+              {previewId === p.id && (
+                <DataPreview data={getSampleData(p.id)} onClose={() => setPreviewId(null)} />
+              )}
               {expandedId === p.id && (
                 <div className="code-block" style={{ marginTop: '1rem' }}>
                   {p.code}

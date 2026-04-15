@@ -45,6 +45,7 @@ const menuItems = [
   {
     section: 'Governance',
     items: [
+      { id: 'governance-scenarios', icon: '🛡️', label: 'UC Governance (50)' },
       { id: 'security', icon: '🔒', label: 'Security & Governance' },
       { id: 'terraform', icon: '☁️', label: 'Terraform / Azure / Snowflake' },
     ],

@@ -9,6 +9,7 @@ const LandingZone = lazy(() => import('./pages/LandingZone'));
 const Ingestion = lazy(() => import('./pages/Ingestion'));
 const BatchIngestion = lazy(() => import('./pages/ingestion/BatchIngestion'));
 const BatchPipelines = lazy(() => import('./pages/ingestion/BatchPipelines'));
+const GovernanceScenarios = lazy(() => import('./pages/governance/GovernanceScenarios'));
 const Modeling = lazy(() => import('./pages/Modeling'));
 const UnityCatalog = lazy(() => import('./pages/UnityCatalog'));
 const Visualization = lazy(() => import('./pages/Visualization'));
@@ -63,6 +64,8 @@ function App() {
         return <PipelineBuilder />;
       case 'data-testing':
         return <DataTesting />;
+      case 'governance-scenarios':
+        return <GovernanceScenarios />;
       case 'security':
         return <SecurityGovernance />;
       case 'xai':

@@ -7,6 +7,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Medallion = lazy(() => import('./pages/Medallion'));
 const LandingZone = lazy(() => import('./pages/LandingZone'));
 const Ingestion = lazy(() => import('./pages/Ingestion'));
+const BatchIngestion = lazy(() => import('./pages/ingestion/BatchIngestion'));
 const Modeling = lazy(() => import('./pages/Modeling'));
 const UnityCatalog = lazy(() => import('./pages/UnityCatalog'));
 const Visualization = lazy(() => import('./pages/Visualization'));
@@ -40,7 +41,7 @@ function App() {
       case 'landing-zone':
         return <LandingZone />;
       case 'ingestion-batch':
-        return <Ingestion filter="batch" />;
+        return <BatchIngestion />;
       case 'ingestion-stream':
         return <Ingestion filter="stream" />;
       case 'ingestion-all':

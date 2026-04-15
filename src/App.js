@@ -13,6 +13,7 @@ const GovernanceScenarios = lazy(() => import('./pages/governance/GovernanceScen
 const ETLScenarios = lazy(() => import('./pages/transformation/ETLScenarios'));
 const ELTScenarios = lazy(() => import('./pages/transformation/ELTScenarios'));
 const StreamIngestion = lazy(() => import('./pages/ingestion/StreamIngestion'));
+const SecurityPIIScenarios = lazy(() => import('./pages/security/SecurityPIIScenarios'));
 const Modeling = lazy(() => import('./pages/Modeling'));
 const UnityCatalog = lazy(() => import('./pages/UnityCatalog'));
 const Visualization = lazy(() => import('./pages/Visualization'));
@@ -75,6 +76,8 @@ function App() {
         return <DataTesting />;
       case 'governance-scenarios':
         return <GovernanceScenarios />;
+      case 'security-pii':
+        return <SecurityPIIScenarios />;
       case 'security':
         return <SecurityGovernance />;
       case 'xai':

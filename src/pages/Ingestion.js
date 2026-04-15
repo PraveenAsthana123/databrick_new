@@ -879,10 +879,249 @@ flattened.write.format("delta").saveAsTable("bronze.flattened_orders")`,
 
 const categories = [...new Set(ingestionScenarios.map((s) => s.category))];
 
+// ─── Sample data generator per scenario category ───
+function getScenarioData(scenario) {
+  const dataMap = {
+    'CSV File Ingestion': {
+      source: { path: 's3://bucket/data/*.csv', format: 'CSV', size: '2.4 MB' },
+      target: { path: 'catalog.bronze.csv_data', format: 'Delta', size: '1.8 MB' },
+      before: [
+        { id: '1', name: ' Alice ', email: 'ALICE@TEST.COM', amount: '150.50', date: '2024-01-15' },
+        { id: '2', name: 'Bob', email: 'bob@test.com', amount: '200', date: '01/20/2024' },
+        { id: '', name: 'Charlie', email: 'charlie@test.com', amount: '-50', date: '2024-02-01' },
+        { id: '2', name: 'Bob', email: 'bob@test.com', amount: '200', date: '01/20/2024' },
+        { id: '4', name: null, email: 'diana@test.com', amount: '320.25', date: '2024-03-10' },
+      ],
+      after: [
+        {
+          id: 1,
+          name: 'Alice',
+          email: 'alice@test.com',
+          amount: 150.5,
+          date: '2024-01-15',
+          _ingest_ts: '2024-04-15',
+        },
+        {
+          id: 2,
+          name: 'Bob',
+          email: 'bob@test.com',
+          amount: 200.0,
+          date: '2024-01-20',
+          _ingest_ts: '2024-04-15',
+        },
+        {
+          id: 4,
+          name: 'UNKNOWN',
+          email: 'diana@test.com',
+          amount: 320.25,
+          date: '2024-03-10',
+          _ingest_ts: '2024-04-15',
+        },
+      ],
+      beforeStats: { rows: 10243, nulls: 312, dupes: 145 },
+      afterStats: { rows: 9756, nulls: 0, dupes: 0 },
+    },
+    'JSON File Ingestion': {
+      source: { path: 'abfss://container@storage/json/', format: 'JSON', size: '5.1 MB' },
+      target: { path: 'catalog.bronze.json_data', format: 'Delta', size: '3.2 MB' },
+      before: [
+        { id: 1, name: 'Alice', address: '{"city":"NYC","zip":"10001"}', tags: '["vip","active"]' },
+        { id: 2, name: null, address: '{"city":"LA"}', tags: '[]' },
+        { id: 3, name: 'Charlie', address: 'INVALID_JSON', tags: '["new"]' },
+      ],
+      after: [
+        {
+          id: 1,
+          name: 'Alice',
+          city: 'NYC',
+          zip: '10001',
+          tags: 'vip,active',
+          _ingest_ts: '2024-04-15',
+        },
+        { id: 2, name: 'UNKNOWN', city: 'LA', zip: null, tags: '', _ingest_ts: '2024-04-15' },
+      ],
+      beforeStats: { rows: 8500, nulls: 425, dupes: 30 },
+      afterStats: { rows: 8200, nulls: 0, dupes: 0 },
+    },
+    'Parquet File Ingestion': {
+      source: { path: 'gs://bucket/data/year=2024/month=*/', format: 'Parquet', size: '15 MB' },
+      target: { path: 'catalog.bronze.parquet_data', format: 'Delta (partitioned)', size: '12 MB' },
+      before: [
+        { user_id: 101, event: 'login', ts: 1705334400, year: 2024, month: 1 },
+        { user_id: 102, event: 'purchase', ts: 1705420800, year: 2024, month: 1 },
+        { user_id: 103, event: 'view', ts: 1707926400, year: 2024, month: 2 },
+      ],
+      after: [
+        {
+          user_id: 101,
+          event: 'login',
+          event_time: '2024-01-15T12:00:00Z',
+          year: 2024,
+          month: 1,
+          _source: 'gcs',
+        },
+        {
+          user_id: 102,
+          event: 'purchase',
+          event_time: '2024-01-16T12:00:00Z',
+          year: 2024,
+          month: 1,
+          _source: 'gcs',
+        },
+        {
+          user_id: 103,
+          event: 'view',
+          event_time: '2024-02-14T12:00:00Z',
+          year: 2024,
+          month: 2,
+          _source: 'gcs',
+        },
+      ],
+      beforeStats: { rows: 250000, nulls: 0, dupes: 0 },
+      afterStats: { rows: 250000, nulls: 0, dupes: 0 },
+    },
+  };
+
+  // Return specific data or generate generic sample
+  if (dataMap[scenario.title]) return dataMap[scenario.title];
+
+  // Generic data based on category
+  const generic = {
+    source: {
+      path: '/mnt/landing/' + scenario.title.toLowerCase().replace(/\s/g, '_'),
+      format: scenario.category.split(' - ')[1] || 'Mixed',
+      size: '~5 MB',
+    },
+    target: {
+      path: 'catalog.bronze.' + scenario.title.toLowerCase().replace(/\s/g, '_').slice(0, 20),
+      format: 'Delta',
+      size: '~3 MB',
+    },
+    before: [
+      { col_1: 'raw_val_1', col_2: 100, col_3: '2024-01-15', col_4: 'active', col_5: null },
+      { col_1: 'raw_val_2', col_2: -5, col_3: 'bad_date', col_4: '', col_5: 'data' },
+      { col_1: 'raw_val_1', col_2: 100, col_3: '2024-01-15', col_4: 'active', col_5: null },
+      { col_1: null, col_2: 250, col_3: '2024-02-20', col_4: 'paused', col_5: 'ok' },
+    ],
+    after: [
+      {
+        col_1: 'raw_val_1',
+        col_2: 100,
+        col_3: '2024-01-15',
+        col_4: 'active',
+        col_5: 'N/A',
+        _ingest_ts: '2024-04-15',
+      },
+      {
+        col_1: 'raw_val_2',
+        col_2: 0,
+        col_3: '1970-01-01',
+        col_4: 'unknown',
+        col_5: 'data',
+        _ingest_ts: '2024-04-15',
+      },
+      {
+        col_1: 'UNKNOWN',
+        col_2: 250,
+        col_3: '2024-02-20',
+        col_4: 'paused',
+        col_5: 'ok',
+        _ingest_ts: '2024-04-15',
+      },
+    ],
+    beforeStats: { rows: 5000, nulls: 120, dupes: 45 },
+    afterStats: { rows: 4835, nulls: 0, dupes: 0 },
+  };
+  return generic;
+}
+
+// ─── Mini data table renderer ─────────────────
+function MiniTable({ rows, title, badge, badgeColor }) {
+  if (!rows || rows.length === 0) return null;
+  const headers = Object.keys(rows[0]);
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <span
+          style={{
+            background: badgeColor || '#fee2e2',
+            color: badge === 'AFTER' ? '#166534' : '#991b1b',
+            padding: '0.15rem 0.5rem',
+            borderRadius: '4px',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+          }}
+        >
+          {badge}
+        </span>
+        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{title}</span>
+      </div>
+      <div
+        style={{
+          overflowX: 'auto',
+          maxHeight: '220px',
+          overflowY: 'auto',
+          border: '1px solid var(--border)',
+          borderRadius: '6px',
+        }}
+      >
+        <table style={{ fontSize: '0.72rem', width: '100%' }}>
+          <thead>
+            <tr>
+              {headers.map((h) => (
+                <th
+                  key={h}
+                  style={{
+                    padding: '0.35rem 0.5rem',
+                    background: '#f5f5f5',
+                    fontSize: '0.68rem',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr key={ri}>
+                {headers.map((h) => {
+                  const v = row[h];
+                  const isNull = v === null || v === undefined || v === '';
+                  return (
+                    <td
+                      key={h}
+                      style={{
+                        padding: '0.3rem 0.5rem',
+                        whiteSpace: 'nowrap',
+                        background: isNull ? '#fef2f2' : undefined,
+                        color: isNull
+                          ? '#991b1b'
+                          : typeof v === 'number' && v < 0
+                            ? '#dc2626'
+                            : undefined,
+                      }}
+                    >
+                      {isNull ? 'NULL' : String(v)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function Ingestion() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [processedIds, setProcessedIds] = useState({});
+  const [processingId, setProcessingId] = useState(null);
 
   const filtered = ingestionScenarios.filter((s) => {
     const matchCategory = selectedCategory === 'All' || s.category === selectedCategory;
@@ -892,12 +1131,34 @@ function Ingestion() {
     return matchCategory && matchSearch;
   });
 
+  const runProcess = (scenarioId) => {
+    setProcessingId(scenarioId);
+    // Simulate processing time
+    setTimeout(
+      () => {
+        setProcessedIds((prev) => ({
+          ...prev,
+          [scenarioId]: {
+            status: 'completed',
+            time: new Date().toISOString(),
+            duration: (Math.random() * 3 + 1).toFixed(1),
+          },
+        }));
+        setProcessingId(null);
+      },
+      Math.floor(Math.random() * 2000) + 1500
+    );
+  };
+
   return (
     <div>
       <div className="page-header">
         <div>
           <h1>Ingestion Scenarios</h1>
-          <p>{ingestionScenarios.length} PySpark data ingestion patterns for Databricks</p>
+          <p>
+            {ingestionScenarios.length} PySpark data ingestion patterns — Input, Process, Output for
+            each
+          </p>
         </div>
       </div>
 
@@ -931,47 +1192,262 @@ function Ingestion() {
       </div>
 
       <div className="scenarios-list">
-        {filtered.map((scenario) => (
-          <div key={scenario.id} className="card scenario-card" style={{ marginBottom: '0.75rem' }}>
+        {filtered.map((scenario) => {
+          const isExpanded = expandedId === scenario.id;
+          const data = isExpanded ? getScenarioData(scenario) : null;
+          const processed = processedIds[scenario.id];
+          const isProcessing = processingId === scenario.id;
+
+          return (
             <div
-              className="scenario-header"
-              onClick={() => setExpandedId(expandedId === scenario.id ? null : scenario.id)}
-              style={{
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
+              key={scenario.id}
+              className="card scenario-card"
+              style={{ marginBottom: '0.75rem' }}
             >
-              <div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.25rem',
-                  }}
-                >
-                  <span className="badge running">{scenario.category}</span>
-                  <strong>
-                    #{scenario.id} — {scenario.title}
-                  </strong>
+              {/* Header */}
+              <div
+                onClick={() => setExpandedId(isExpanded ? null : scenario.id)}
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      marginBottom: '0.25rem',
+                    }}
+                  >
+                    <span className="badge running">{scenario.category}</span>
+                    <strong>
+                      #{scenario.id} — {scenario.title}
+                    </strong>
+                    {processed && <span className="badge success">Processed</span>}
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    {scenario.desc}
+                  </p>
                 </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                  {scenario.desc}
-                </p>
+                <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
+                  {isExpanded ? '\u25BC' : '\u25B6'}
+                </span>
               </div>
-              <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>
-                {expandedId === scenario.id ? '▼' : '▶'}
-              </span>
+
+              {/* Expanded: Input → Process → Output */}
+              {isExpanded && data && (
+                <div style={{ marginTop: '1rem' }}>
+                  {/* Data Path */}
+                  <div
+                    style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}
+                  >
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: '200px',
+                        padding: '0.6rem 0.8rem',
+                        background: '#fef2f2',
+                        borderRadius: '6px',
+                        border: '1px solid #fecaca',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '0.65rem',
+                          color: '#991b1b',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Source
+                      </div>
+                      <div
+                        style={{ fontSize: '0.8rem', fontFamily: 'monospace', marginTop: '0.2rem' }}
+                      >
+                        {data.source.path}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--text-secondary)',
+                          marginTop: '0.15rem',
+                        }}
+                      >
+                        {data.source.format} | {data.source.size} |{' '}
+                        {data.beforeStats.rows.toLocaleString()} rows
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontSize: '1.5rem',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      \u2192
+                    </div>
+                    <div
+                      style={{
+                        flex: 1,
+                        minWidth: '200px',
+                        padding: '0.6rem 0.8rem',
+                        background: '#dcfce7',
+                        borderRadius: '6px',
+                        border: '1px solid #bbf7d0',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: '0.65rem',
+                          color: '#166534',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Target
+                      </div>
+                      <div
+                        style={{ fontSize: '0.8rem', fontFamily: 'monospace', marginTop: '0.2rem' }}
+                      >
+                        {data.target.path}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--text-secondary)',
+                          marginTop: '0.15rem',
+                        }}
+                      >
+                        {data.target.format} | {data.target.size} |{' '}
+                        {data.afterStats.rows.toLocaleString()} rows
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Before / After tables side by side */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '1rem',
+                      marginBottom: '1rem',
+                    }}
+                  >
+                    <MiniTable
+                      rows={data.before}
+                      title={`Pre-Process Data (${data.beforeStats.rows.toLocaleString()} rows, ${data.beforeStats.nulls} nulls, ${data.beforeStats.dupes} dupes)`}
+                      badge="BEFORE"
+                      badgeColor="#fee2e2"
+                    />
+
+                    {processed ? (
+                      <MiniTable
+                        rows={data.after}
+                        title={`Post-Process Data (${data.afterStats.rows.toLocaleString()} rows, ${data.afterStats.nulls} nulls, ${data.afterStats.dupes} dupes)`}
+                        badge="AFTER"
+                        badgeColor="#dcfce7"
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          border: '2px dashed var(--border)',
+                          borderRadius: '6px',
+                          padding: '2rem',
+                          color: 'var(--text-secondary)',
+                        }}
+                      >
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+                            {isProcessing ? '\u23f3' : '\u25b6\ufe0f'}
+                          </div>
+                          <p>
+                            {isProcessing
+                              ? 'Processing...'
+                              : 'Click "Run Process" to see output data'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Process Button + Stats */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '1rem',
+                      alignItems: 'center',
+                      marginBottom: '1rem',
+                    }}
+                  >
+                    <button
+                      className="btn btn-primary"
+                      disabled={isProcessing}
+                      onClick={() => runProcess(scenario.id)}
+                    >
+                      {isProcessing
+                        ? '\u23f3 Processing...'
+                        : processed
+                          ? '\u21bb Re-run Process'
+                          : '\u25b6 Run Process'}
+                    </button>
+
+                    {processed && (
+                      <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem' }}>
+                        <span style={{ color: 'var(--success)' }}>
+                          Completed in {processed.duration}s
+                        </span>
+                        <span style={{ color: 'var(--text-secondary)' }}>|</span>
+                        <span>
+                          Rows:{' '}
+                          <b style={{ color: '#991b1b' }}>
+                            {data.beforeStats.rows.toLocaleString()}
+                          </b>{' '}
+                          \u2192{' '}
+                          <b style={{ color: '#166534' }}>
+                            {data.afterStats.rows.toLocaleString()}
+                          </b>
+                        </span>
+                        <span>
+                          Nulls: <b style={{ color: '#991b1b' }}>{data.beforeStats.nulls}</b> \u2192{' '}
+                          <b style={{ color: '#166534' }}>{data.afterStats.nulls}</b>
+                        </span>
+                        <span>
+                          Dupes: <b style={{ color: '#991b1b' }}>{data.beforeStats.dupes}</b> \u2192{' '}
+                          <b style={{ color: '#166534' }}>{data.afterStats.dupes}</b>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Code block */}
+                  <details>
+                    <summary
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        color: 'var(--text-secondary)',
+                        fontWeight: 600,
+                      }}
+                    >
+                      View PySpark Code
+                    </summary>
+                    <div className="code-block" style={{ marginTop: '0.5rem' }}>
+                      {scenario.code}
+                    </div>
+                  </details>
+                </div>
+              )}
             </div>
-            {expandedId === scenario.id && (
-              <div className="code-block" style={{ marginTop: '1rem' }}>
-                {scenario.code}
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

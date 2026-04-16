@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../components/common/ScenarioCard';
 
 const testingScenarios = [
   // ===== Schema Validation (1-5) =====
@@ -2927,11 +2928,7 @@ function DataTesting() {
                 {expandedId === scenario.id ? '▼' : '▶'}
               </span>
             </div>
-            {expandedId === scenario.id && (
-              <div className="code-block" style={{ marginTop: '1rem' }}>
-                {scenario.code}
-              </div>
-            )}
+            {expandedId === scenario.id && <ScenarioCard scenario={scenario} />}
           </div>
         ))}
       </div>

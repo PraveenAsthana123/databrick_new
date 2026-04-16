@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../../components/common/ScenarioCard';
 import { exportToCSV } from '../../utils/fileExport';
 
 const batchPipelines = [
@@ -1069,24 +1070,7 @@ function BatchPipelines() {
                   </div>
                 </div>
 
-                <details>
-                  <summary
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    View PySpark Code
-                  </summary>
-                  <div
-                    className="code-block"
-                    style={{ marginTop: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}
-                  >
-                    {p.code}
-                  </div>
-                </details>
+                <ScenarioCard scenario={p} />
               </div>
             )}
           </div>

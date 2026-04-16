@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../../components/common/ScenarioCard';
 import { exportToCSV } from '../../utils/fileExport';
 
 const eltScenarios = [
@@ -894,9 +895,7 @@ function ELTScenarios() {
                   </div>
                 </div>
                 <div>
-                  <div className="code-block" style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                    {s.code}
-                  </div>
+                  <ScenarioCard scenario={s} />
                 </div>
               </div>
             )}

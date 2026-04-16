@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../components/common/ScenarioCard';
 
 const explainableScenarios = [
   {
@@ -2577,11 +2578,7 @@ function XAI() {
                 {expandedId === scenario.id ? '\u25BC' : '\u25B6'}
               </span>
             </div>
-            {expandedId === scenario.id && (
-              <div className="code-block" style={{ marginTop: '1rem' }}>
-                {scenario.code}
-              </div>
-            )}
+            {expandedId === scenario.id && <ScenarioCard scenario={scenario} />}
           </div>
         ))}
       </div>

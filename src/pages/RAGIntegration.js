@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../components/common/ScenarioCard';
 
 const ollamaScenarios = [
   {
@@ -2672,11 +2673,7 @@ function RAGIntegration() {
                 {expandedId === `${activeTab}-${scenario.id}` ? '\u25BC' : '\u25B6'}
               </span>
             </div>
-            {expandedId === `${activeTab}-${scenario.id}` && (
-              <div className="code-block" style={{ marginTop: '1rem' }}>
-                {scenario.code}
-              </div>
-            )}
+            {expandedId === `${activeTab}-${scenario.id}` && <ScenarioCard scenario={scenario} />}
           </div>
         ))}
       </div>

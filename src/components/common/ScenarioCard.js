@@ -204,6 +204,103 @@ function generateSampleData(scenario) {
   };
 }
 
+// Generate explanation for the scenario (what/why/when/how)
+function generateExplanation(scenario) {
+  const title = scenario.title || 'Scenario';
+  const desc = scenario.desc || scenario.description || '';
+  const category = scenario.category || scenario.group || '';
+  const flow = scenario.flow || '';
+
+  const titleLower = title.toLowerCase();
+
+  // What the scenario does
+  const what =
+    desc || `This scenario demonstrates "${title}" — a ${category} pattern for data processing.`;
+
+  // Why it matters
+  let why = 'Critical for reliable, production-grade data pipelines at enterprise scale.';
+  if (titleLower.includes('cdc') || titleLower.includes('change')) {
+    why =
+      'Essential for keeping downstream systems in sync with source data changes without full reloads.';
+  } else if (titleLower.includes('scd')) {
+    why =
+      'Enables historical tracking of dimension changes, critical for point-in-time analytics and audit.';
+  } else if (titleLower.includes('pii') || titleLower.includes('mask')) {
+    why =
+      'Required for regulatory compliance (GDPR, HIPAA, PCI) and protecting sensitive customer data.';
+  } else if (titleLower.includes('stream')) {
+    why =
+      'Delivers real-time insights for time-sensitive use cases like fraud detection and live dashboards.';
+  } else if (titleLower.includes('merge') || titleLower.includes('upsert')) {
+    why = 'Efficient way to apply inserts, updates, and deletes atomically in a single operation.';
+  } else if (titleLower.includes('dedup')) {
+    why = 'Prevents data duplication that skews metrics and wastes storage/compute.';
+  } else if (titleLower.includes('quality') || titleLower.includes('validation')) {
+    why = 'Catches bad data early to prevent garbage reaching business users and ML models.';
+  } else if (titleLower.includes('encrypt') || titleLower.includes('security')) {
+    why = 'Protects data at rest and in transit, required for compliance and breach prevention.';
+  } else if (titleLower.includes('audit') || titleLower.includes('lineage')) {
+    why = 'Provides traceability required for compliance, debugging, and trust in data.';
+  } else if (titleLower.includes('kafka') || titleLower.includes('event')) {
+    why =
+      'Enables event-driven architecture with exactly-once processing and backpressure handling.';
+  } else if (titleLower.includes('ingestion') || titleLower.includes('load')) {
+    why = 'Foundation of the data pipeline — reliable ingestion determines downstream quality.';
+  } else if (titleLower.includes('feature') || titleLower.includes('ml')) {
+    why = 'Feature consistency between training and serving is critical for ML model accuracy.';
+  } else if (titleLower.includes('rag') || titleLower.includes('embed')) {
+    why = 'Core building block of GenAI applications — quality retrieval depends on good chunking.';
+  } else if (titleLower.includes('partition') || titleLower.includes('optim')) {
+    why = 'Performance directly impacts query cost and user experience at scale.';
+  }
+
+  // When to use
+  let when =
+    'Use when building production data pipelines with enterprise reliability requirements.';
+  if (titleLower.includes('cdc') || titleLower.includes('incremental')) {
+    when = 'Use when source tables change frequently and full reloads are too expensive.';
+  } else if (titleLower.includes('scd type 2')) {
+    when =
+      'Use when business needs history of changes (customer lifecycle, pricing history, etc.).';
+  } else if (titleLower.includes('scd type 1')) {
+    when = 'Use when only current state matters and history is not needed.';
+  } else if (titleLower.includes('batch')) {
+    when = 'Use for periodic processing (hourly, daily) where real-time is not required.';
+  } else if (titleLower.includes('stream') || titleLower.includes('real-time')) {
+    when = 'Use when latency requirements are seconds/minutes, not hours.';
+  } else if (titleLower.includes('pii') || titleLower.includes('mask')) {
+    when = 'Use for any dataset containing personally identifiable or regulated information.';
+  } else if (titleLower.includes('reconcil')) {
+    when = 'Use to verify data consistency between source and target after critical loads.';
+  } else if (titleLower.includes('dr') || titleLower.includes('disaster')) {
+    when = 'Use for business-critical data requiring multi-region availability (RPO < 1hr).';
+  }
+
+  // Key steps
+  const steps = [
+    'Connect to source system and verify access',
+    'Extract data with proper schema handling',
+    'Validate data quality and schema',
+    'Transform according to business rules',
+    'Load to target (Delta Lake) with audit trail',
+    'Verify row counts match expectations',
+  ];
+
+  // Business impact / use cases
+  let impact = 'Improves data reliability, reduces operational cost, enables trusted analytics.';
+  if (titleLower.includes('fraud') || titleLower.includes('risk')) {
+    impact = 'Directly prevents financial loss by catching suspicious patterns in real-time.';
+  } else if (titleLower.includes('customer') || titleLower.includes('crm')) {
+    impact = 'Improves customer experience through accurate, unified customer view.';
+  } else if (titleLower.includes('finance') || titleLower.includes('erp')) {
+    impact = 'Ensures financial reporting accuracy and regulatory compliance.';
+  } else if (titleLower.includes('cost') || titleLower.includes('finops')) {
+    impact = 'Reduces cloud spend by identifying waste and optimizing resource usage.';
+  }
+
+  return { what, why, when, steps, impact, flow, category };
+}
+
 // Generate code approaches from original code
 function generateApproaches(scenario) {
   const code = scenario.code || '# No code provided';
@@ -304,6 +401,7 @@ function ScenarioCard({ scenario }) {
   const [duration, setDuration] = useState(null);
 
   const data = generateSampleData(scenario);
+  const explanation = generateExplanation(scenario);
   const approaches = generateApproaches(scenario);
 
   const runProcess = () => {
@@ -321,6 +419,124 @@ function ScenarioCard({ scenario }) {
 
   return (
     <div style={{ marginTop: '1rem' }}>
+      {/* What is this scenario? — Explanation */}
+      <div
+        style={{
+          marginBottom: '1rem',
+          padding: '0.75rem 1rem',
+          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+          borderRadius: '8px',
+          border: '1px solid #bfdbfe',
+        }}
+      >
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}
+        >
+          <span style={{ fontSize: '1rem' }}>{'\ud83d\udca1'}</span>
+          <strong style={{ fontSize: '0.85rem', color: '#1e40af' }}>What is this scenario?</strong>
+        </div>
+        <p
+          style={{
+            fontSize: '0.8rem',
+            color: '#1e3a8a',
+            marginBottom: '0.6rem',
+            lineHeight: '1.5',
+          }}
+        >
+          {explanation.what}
+        </p>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.6rem',
+            marginBottom: '0.6rem',
+          }}
+        >
+          <div
+            style={{
+              padding: '0.5rem 0.7rem',
+              background: 'rgba(255,255,255,0.7)',
+              borderRadius: '6px',
+              borderLeft: '3px solid #3b82f6',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: '#1e40af',
+                textTransform: 'uppercase',
+                marginBottom: '0.2rem',
+              }}
+            >
+              {'\ud83c\udfaf'} Why It Matters
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#1e3a8a' }}>{explanation.why}</div>
+          </div>
+          <div
+            style={{
+              padding: '0.5rem 0.7rem',
+              background: 'rgba(255,255,255,0.7)',
+              borderRadius: '6px',
+              borderLeft: '3px solid #8b5cf6',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                color: '#6d28d9',
+                textTransform: 'uppercase',
+                marginBottom: '0.2rem',
+              }}
+            >
+              {'\ud83d\udd52'} When To Use
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#4c1d95' }}>{explanation.when}</div>
+          </div>
+        </div>
+        <div
+          style={{
+            padding: '0.5rem 0.7rem',
+            background: 'rgba(255,255,255,0.7)',
+            borderRadius: '6px',
+            borderLeft: '3px solid #10b981',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              color: '#065f46',
+              textTransform: 'uppercase',
+              marginBottom: '0.3rem',
+            }}
+          >
+            {'\ud83d\udccb'} Key Steps
+          </div>
+          <ol style={{ fontSize: '0.72rem', color: '#064e3b', margin: 0, paddingLeft: '1.2rem' }}>
+            {explanation.steps.map((step, i) => (
+              <li key={i} style={{ marginBottom: '0.15rem' }}>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div
+          style={{
+            marginTop: '0.5rem',
+            padding: '0.4rem 0.7rem',
+            background: 'rgba(253, 224, 71, 0.2)',
+            borderRadius: '6px',
+            fontSize: '0.72rem',
+            color: '#713f12',
+          }}
+        >
+          <strong>{'\ud83d\udcbc'} Business Impact:</strong> {explanation.impact}
+        </div>
+      </div>
+
       {/* Source → Target Path */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <div

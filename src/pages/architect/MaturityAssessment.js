@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
+import DeepGuide from '../../components/architect/DeepGuide';
 
 // ─── Assessment Data ───────────────────────────────────────────────────────────
 const DIMENSIONS = [
@@ -1073,6 +1074,9 @@ function MaturityAssessment() {
                       </div>
                     );
                   })}
+
+                  {/* Architect Deep Guide — steps, recommendations, pitfalls, KPIs */}
+                  <DeepGuide type="assessment" dimension={dim.id} />
                 </div>
               )}
             </div>

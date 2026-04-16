@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
+import DeepGuide from '../../components/architect/DeepGuide';
 
 const maturityLevels = [
   {
@@ -822,6 +823,9 @@ function DataMaturityModel() {
                     </div>
                   </div>
                 </div>
+
+                {/* Architect Deep Guide — steps, recommendations, pitfalls, KPIs */}
+                <DeepGuide type="maturity" level={lvl.level} />
               </div>
             )}
           </div>

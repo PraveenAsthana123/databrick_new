@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
+import DeepGuide from '../../components/architect/DeepGuide';
 
 const phases = [
   {
@@ -730,6 +731,9 @@ function DataRoadmap() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Architect Deep Guide — steps, recommendations, pitfalls, KPIs */}
+                    <DeepGuide type="roadmap" phase={phase.id} />
                   </div>
                 )}
               </div>

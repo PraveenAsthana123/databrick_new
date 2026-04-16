@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
+import DeepGuide from '../../components/architect/DeepGuide';
 
 const supportLevels = [
   {
@@ -770,6 +771,9 @@ function ProductionSupport() {
                     </span>
                   </div>
                 </div>
+
+                {/* Architect Deep Guide — steps, recommendations, pitfalls, KPIs */}
+                <DeepGuide type="support" level={lvl.level} />
               </div>
             )}
           </div>

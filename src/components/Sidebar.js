@@ -26,6 +26,7 @@ const menuItems = [
     items: [
       { id: 'elt-scenarios', icon: '🔄', label: 'ELT Pipelines (50)' },
       { id: 'etl-scenarios', icon: '⚙️', label: 'ETL Pipelines (50)' },
+      { id: 'merge-patterns', icon: '🔀', label: 'Merge Patterns (30)' },
       { id: 'elt-operations', icon: '📋', label: 'ELT Operations' },
       { id: 'etl-operations', icon: '🔧', label: 'ETL Transformations' },
     ],

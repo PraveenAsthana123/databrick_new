@@ -12,6 +12,7 @@ const BatchPipelines = lazy(() => import('./pages/ingestion/BatchPipelines'));
 const GovernanceScenarios = lazy(() => import('./pages/governance/GovernanceScenarios'));
 const ETLScenarios = lazy(() => import('./pages/transformation/ETLScenarios'));
 const ELTScenarios = lazy(() => import('./pages/transformation/ELTScenarios'));
+const MergePatterns = lazy(() => import('./pages/transformation/MergePatterns'));
 const StreamIngestion = lazy(() => import('./pages/ingestion/StreamIngestion'));
 const SecurityPIIScenarios = lazy(() => import('./pages/security/SecurityPIIScenarios'));
 const BronzeOperations = lazy(() => import('./pages/medallion/BronzeOperations'));
@@ -74,6 +75,8 @@ function App() {
         return <Ingestion filter="all" />;
       case 'elt-scenarios':
         return <ELTScenarios />;
+      case 'merge-patterns':
+        return <MergePatterns />;
       case 'elt-operations':
         return <ELTOperations filter="elt" />;
       case 'etl-scenarios':

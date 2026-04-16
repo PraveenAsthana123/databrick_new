@@ -15,6 +15,7 @@ const ELTScenarios = lazy(() => import('./pages/transformation/ELTScenarios'));
 const StreamIngestion = lazy(() => import('./pages/ingestion/StreamIngestion'));
 const SecurityPIIScenarios = lazy(() => import('./pages/security/SecurityPIIScenarios'));
 const BronzeOperations = lazy(() => import('./pages/medallion/BronzeOperations'));
+const DataArchitectChallenges = lazy(() => import('./pages/architect/DataArchitectChallenges'));
 const SilverOperations = lazy(() => import('./pages/medallion/SilverOperations'));
 const GoldOperations = lazy(() => import('./pages/medallion/GoldOperations'));
 const Modeling = lazy(() => import('./pages/Modeling'));
@@ -111,6 +112,8 @@ function App() {
         return <DownloadData />;
       case 'simulation':
         return <SimulationTools />;
+      case 'architect-challenges':
+        return <DataArchitectChallenges />;
       case 'settings':
         return <Settings />;
       default:

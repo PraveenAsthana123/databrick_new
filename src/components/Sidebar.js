@@ -74,6 +74,10 @@ const menuItems = [
       { id: 'simulation', icon: '🧪', label: 'Simulation Tools' },
     ],
   },
+  {
+    section: 'Data Architect',
+    items: [{ id: 'architect-challenges', icon: '🏗️', label: 'Architect Challenges (120)' }],
+  },
   { section: 'System', items: [{ id: 'settings', icon: '⚙️', label: 'Settings' }] },
 ];
 

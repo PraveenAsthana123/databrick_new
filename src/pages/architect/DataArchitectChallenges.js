@@ -1826,195 +1826,333 @@ function DataArchitectChallenges() {
         </div>
       )}
 
-      {filtered.map((c) => {
-        const isExpanded = expandedId === c.id;
-        return (
-          <div key={c.id} className="card" style={{ marginBottom: '0.75rem' }}>
+      {/* Light category color palette */}
+      {(() => null)()}
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))',
+          gap: '1rem',
+        }}
+      >
+        {filtered.map((c) => {
+          // Light color palette per category
+          const categoryColors = {
+            'Ingestion & Pipeline': { bg: '#fef3c7', accent: '#f59e0b', border: '#fde68a' },
+            'Data Quality': { bg: '#dcfce7', accent: '#22c55e', border: '#bbf7d0' },
+            'Data Modeling': { bg: '#dbeafe', accent: '#3b82f6', border: '#bfdbfe' },
+            Performance: { bg: '#fce7f3', accent: '#ec4899', border: '#fbcfe8' },
+            'Pipeline Orchestration': { bg: '#e0e7ff', accent: '#6366f1', border: '#c7d2fe' },
+            'Governance & Compliance': { bg: '#fef2f2', accent: '#ef4444', border: '#fecaca' },
+            Security: { bg: '#fee2e2', accent: '#dc2626', border: '#fecaca' },
+            'Data Integration': { bg: '#ecfccb', accent: '#84cc16', border: '#d9f99d' },
+            'AI/ML/RAG': { bg: '#f3e8ff', accent: '#a855f7', border: '#e9d5ff' },
+            'Cost & FinOps': { bg: '#fff7ed', accent: '#ea580c', border: '#fed7aa' },
+            'Organization & Process': { bg: '#ccfbf1', accent: '#14b8a6', border: '#99f6e4' },
+            Observability: { bg: '#cffafe', accent: '#06b6d4', border: '#a5f3fc' },
+          };
+          const colors = categoryColors[c.group] || {
+            bg: '#f3f4f6',
+            accent: '#6b7280',
+            border: '#e5e7eb',
+          };
+          const isExpanded = expandedId === c.id;
+
+          return (
             <div
-              onClick={() => setExpandedId(isExpanded ? null : c.id)}
+              key={c.id}
               style={{
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                gap: '1rem',
+                background: colors.bg,
+                border: `2px solid ${colors.border}`,
+                borderLeft: `6px solid ${colors.accent}`,
+                borderRadius: '10px',
+                padding: '1rem 1.25rem',
+                marginBottom: '0.5rem',
+                transition: 'all 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
               }}
             >
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    flexWrap: 'wrap',
-                    marginBottom: '0.25rem',
-                  }}
-                >
-                  <span className="badge running">{c.group}</span>
-                  <strong>
-                    #{c.id} &mdash; {c.title}
-                  </strong>
-                </div>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
-                  {c.why.length > 120 ? c.why.slice(0, 120) + '...' : c.why}
-                </p>
-              </div>
-              <span style={{ color: 'var(--text-secondary)', flexShrink: 0, marginTop: '2px' }}>
-                {isExpanded ? '\u25BC' : '\u25B6'}
-              </span>
-            </div>
-
-            {isExpanded && (
               <div
+                onClick={() => setExpandedId(isExpanded ? null : c.id)}
                 style={{
-                  marginTop: '1.25rem',
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '1.25rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
                 }}
               >
-                {/* Left column: challenge details */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                  <div>
-                    <div
+                <div style={{ flex: 1 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      flexWrap: 'wrap',
+                      marginBottom: '0.3rem',
+                    }}
+                  >
+                    <span
                       style={{
-                        fontSize: '0.7rem',
+                        background: colors.accent,
+                        color: '#fff',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.65rem',
                         fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      {c.group}
+                    </span>
+                    <strong style={{ fontSize: '0.95rem', color: '#1a1a1a' }}>
+                      #{c.id} — {c.title}
+                    </strong>
+                  </div>
+                </div>
+                <span style={{ color: colors.accent, flexShrink: 0, fontSize: '1.1rem' }}>
+                  {isExpanded ? '\u25BC' : '\u25B6'}
+                </span>
+              </div>
+
+              {/* Always visible summary */}
+              <div
+                style={{
+                  marginTop: '0.6rem',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '0.5rem',
+                }}
+              >
+                <div
+                  style={{
+                    padding: '0.4rem 0.6rem',
+                    background: 'rgba(255,255,255,0.7)',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      color: '#991b1b',
+                      textTransform: 'uppercase',
+                      marginBottom: '0.15rem',
+                    }}
+                  >
+                    {'\u26a0\ufe0f'} Why Hard
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#1a1a1a', lineHeight: 1.4 }}>
+                    {c.why}
+                  </div>
+                </div>
+                <div
+                  style={{
+                    padding: '0.4rem 0.6rem',
+                    background: 'rgba(255,255,255,0.7)',
+                    borderRadius: '6px',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: '0.6rem',
+                      fontWeight: 700,
+                      color: '#166534',
+                      textTransform: 'uppercase',
+                      marginBottom: '0.15rem',
+                    }}
+                  >
+                    {'\u2705'} Solution
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#1a1a1a', lineHeight: 1.4 }}>
+                    {c.solution}
+                  </div>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div
+                  style={{
+                    marginTop: '0.75rem',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr',
+                    gap: '0.6rem',
+                  }}
+                >
+                  {/* Business Impact */}
+                  <div
+                    style={{
+                      padding: '0.6rem 0.8rem',
+                      background: '#fff',
+                      borderRadius: '6px',
+                      borderLeft: `3px solid #ef4444`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        color: '#991b1b',
+                        textTransform: 'uppercase',
                         marginBottom: '0.25rem',
                       }}
                     >
-                      Why It&apos;s Hard
+                      {'\ud83d\udca5'} Real Impact on Business
                     </div>
-                    <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>{c.why}</p>
+                    <div style={{ fontSize: '0.8rem', color: '#1a1a1a', lineHeight: 1.5 }}>
+                      {c.impact}
+                    </div>
                   </div>
 
-                  <div>
+                  {/* Recommended Solution (detailed) */}
+                  <div
+                    style={{
+                      padding: '0.6rem 0.8rem',
+                      background: '#fff',
+                      borderRadius: '6px',
+                      borderLeft: `3px solid #22c55e`,
+                    }}
+                  >
                     <div
                       style={{
-                        fontSize: '0.7rem',
+                        fontSize: '0.65rem',
                         fontWeight: 700,
+                        color: '#166534',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: '#ef4444',
-                        marginBottom: '0.25rem',
+                        marginBottom: '0.3rem',
                       }}
                     >
-                      Real Impact
+                      {'\ud83d\udca1'} Recommended Solution (Step-by-Step)
                     </div>
-                    <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>{c.impact}</p>
-                  </div>
-
-                  <div>
                     <div
                       style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: '#22c55e',
-                        marginBottom: '0.25rem',
-                      }}
-                    >
-                      Solution
-                    </div>
-                    <p style={{ margin: 0, fontSize: '0.875rem', lineHeight: 1.5 }}>{c.solution}</p>
-                  </div>
-
-                  <div>
-                    <div
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: 'var(--text-secondary)',
-                        marginBottom: '0.25rem',
-                      }}
-                    >
-                      Tools / Patterns
-                    </div>
-                    <p
-                      style={{
-                        margin: 0,
                         fontSize: '0.8rem',
-                        color: 'var(--text-secondary)',
+                        color: '#1a1a1a',
+                        lineHeight: 1.5,
+                        marginBottom: '0.4rem',
+                      }}
+                    >
+                      <strong>Strategy:</strong> {c.solution}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#374151', lineHeight: 1.5 }}>
+                      <strong>Implementation steps:</strong>
+                      <ol style={{ margin: '0.25rem 0 0 1.1rem', paddingLeft: '0.3rem' }}>
+                        <li>Assess current state — identify scope and affected systems</li>
+                        <li>Design target architecture aligned to business requirements</li>
+                        <li>Build POC in sandbox with sample data</li>
+                        <li>Define quality gates, SLAs, and rollback plan</li>
+                        <li>Implement incrementally with monitoring at each step</li>
+                        <li>Document runbook, handover to operations</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  {/* Tools / Patterns */}
+                  <div
+                    style={{
+                      padding: '0.6rem 0.8rem',
+                      background: '#fff',
+                      borderRadius: '6px',
+                      borderLeft: `3px solid #6366f1`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        color: '#4338ca',
+                        textTransform: 'uppercase',
+                        marginBottom: '0.25rem',
+                      }}
+                    >
+                      {'\ud83d\udd27'} Tools & Patterns
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.78rem',
+                        color: '#1a1a1a',
                         fontFamily: 'monospace',
                         lineHeight: 1.5,
                       }}
                     >
                       {c.tools}
-                    </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Right column: interview answer */}
-                <div
-                  style={{
-                    background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: '10px',
-                    padding: '1.25rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                  }}
-                >
+                  {/* Recommendations (best practices) */}
                   <div
                     style={{
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em',
-                      color: '#1d4ed8',
-                      marginBottom: '0.75rem',
+                      padding: '0.6rem 0.8rem',
+                      background: '#fff',
+                      borderRadius: '6px',
+                      borderLeft: `3px solid #f59e0b`,
                     }}
                   >
-                    Interview Answer
+                    <div
+                      style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        color: '#92400e',
+                        textTransform: 'uppercase',
+                        marginBottom: '0.3rem',
+                      }}
+                    >
+                      {'\u2b50'} Architect Recommendations
+                    </div>
+                    <ul
+                      style={{
+                        fontSize: '0.75rem',
+                        color: '#1a1a1a',
+                        lineHeight: 1.5,
+                        margin: 0,
+                        paddingLeft: '1.1rem',
+                      }}
+                    >
+                      <li>Start with small scope (single domain/pipeline) to prove value</li>
+                      <li>Get business sponsor + technical owner before kickoff</li>
+                      <li>Define measurable KPIs upfront (quality score, SLA %, cost reduction)</li>
+                      <li>Build observability and audit from day one, not as afterthought</li>
+                      <li>Plan for incremental rollout, not big-bang change</li>
+                    </ul>
                   </div>
+
+                  {/* Interview Answer */}
                   <div
                     style={{
-                      fontSize: '0.92rem',
-                      lineHeight: 1.65,
-                      color: '#1e3a5f',
-                      fontStyle: 'italic',
-                      position: 'relative',
-                      paddingLeft: '1.25rem',
+                      padding: '0.75rem 1rem',
+                      background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                      borderRadius: '8px',
+                      color: '#e2e8f0',
                     }}
                   >
-                    <span
+                    <div
                       style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: '-4px',
-                        fontSize: '2rem',
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
                         color: '#93c5fd',
-                        lineHeight: 1,
+                        textTransform: 'uppercase',
+                        marginBottom: '0.4rem',
                       }}
                     >
-                      &ldquo;
-                    </span>
-                    {c.interviewAnswer}
-                    <span
-                      style={{
-                        fontSize: '2rem',
-                        color: '#93c5fd',
-                        lineHeight: 1,
-                        verticalAlign: 'bottom',
-                        marginLeft: '4px',
-                      }}
-                    >
-                      &rdquo;
-                    </span>
+                      {'\ud83d\udcac'} Interview-Ready Answer
+                    </div>
+                    <div style={{ fontSize: '0.85rem', lineHeight: 1.6, fontStyle: 'italic' }}>
+                      <span style={{ fontSize: '1.5rem', color: '#60a5fa', marginRight: '0.3rem' }}>
+                        &ldquo;
+                      </span>
+                      {c.interviewAnswer}
+                      <span style={{ fontSize: '1.5rem', color: '#60a5fa', marginLeft: '0.2rem' }}>
+                        &rdquo;
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -474,7 +474,7 @@ function generateApproaches(scenario) {
       difficulty: 'Beginner',
       pros: 'Most common, full control, easy to debug',
       cons: 'Verbose for simple cases',
-      code: code,
+      code: `# ═══════════════════════════════════════════════════════════\n# PySpark DataFrame API — ${title}\n# ═══════════════════════════════════════════════════════════\n# WHAT: Uses Spark's DataFrame API for distributed processing\n# WHY:  Native Spark, best performance, fully distributed\n# WHEN: When you need full control over transformations\n# ═══════════════════════════════════════════════════════════\n\n${code}\n\n# ─── Tips ──────────────────────────────────────────────\n# 1. Use .cache() for DataFrames reused multiple times\n# 2. Use .repartition() before large shuffles for better parallelism\n# 3. Use broadcast() for small lookup tables (<10MB)\n# 4. Check physical plan with .explain() to spot issues\n# 5. Use .persist(StorageLevel.MEMORY_AND_DISK) for fault tolerance`,
     },
     {
       name: 'Spark SQL (DML)',
@@ -482,7 +482,7 @@ function generateApproaches(scenario) {
       difficulty: 'Beginner',
       pros: 'SQL-native, familiar syntax',
       cons: 'Less programmatic control',
-      code: `-- Spark SQL (DML) for: ${title}\nINSERT OVERWRITE catalog.silver.target_table\nSELECT id, name, email, amount,\n    current_timestamp() AS _processed_ts\nFROM catalog.bronze.source_table\nWHERE id IS NOT NULL\nQUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY _ingest_ts DESC) = 1;`,
+      code: `-- ═════════════════════════════════════════════════════════\n-- Spark SQL (DML) — ${title}\n-- ═════════════════════════════════════════════════════════\n-- WHAT: Uses SQL INSERT/MERGE to load data\n-- WHY:  Familiar SQL syntax, works on any SQL engine\n-- WHEN: SQL-native teams, simple transformations\n-- ═════════════════════════════════════════════════════════\n\n-- Step 1: Overwrite target with clean, deduped data\nINSERT OVERWRITE catalog.silver.target_table\nSELECT\n    id,                                -- Primary key\n    TRIM(name) AS name,                -- Clean whitespace\n    LOWER(email) AS email,             -- Standardize email\n    CAST(amount AS DECIMAL(18,2)) AS amount,  -- Enforce type\n    current_timestamp() AS _processed_ts       -- Audit column\nFROM catalog.bronze.source_table\nWHERE id IS NOT NULL                   -- Filter invalid rows\n-- Deduplicate: keep latest row per id based on ingest timestamp\nQUALIFY ROW_NUMBER() OVER (\n    PARTITION BY id\n    ORDER BY _ingest_ts DESC\n) = 1;\n\n-- Step 2: Verify row counts match expectations\nSELECT COUNT(*) AS loaded_rows FROM catalog.silver.target_table;`,
     },
     {
       name: 'Spark SQL (DDL)',
@@ -498,7 +498,7 @@ function generateApproaches(scenario) {
       difficulty: 'Intermediate',
       pros: 'Declarative, auto-manages dependencies, built-in quality',
       cons: 'Requires DLT pipeline setup',
-      code: `# Delta Live Tables (DLT) for: ${title}\nimport dlt\nfrom pyspark.sql.functions import current_timestamp\n\n@dlt.table(\n    name="bronze_data",\n    comment="Raw data from source",\n    table_properties={"quality": "bronze"}\n)\ndef ingest():\n    return spark.read.format("csv").option("header","true").load("/mnt/landing/")\n\n@dlt.table(name="silver_data")\n@dlt.expect_or_drop("valid_id", "id IS NOT NULL")\n@dlt.expect_or_drop("valid_amount", "amount > 0")\ndef clean():\n    return dlt.read("bronze_data").dropDuplicates(["id"]) \\\n        .withColumn("_ts", current_timestamp())`,
+      code: `# ═══════════════════════════════════════════════════════════\n# Delta Live Tables (DLT) — ${title}\n# ═══════════════════════════════════════════════════════════\n# WHAT: Declarative pipeline with automatic dependency management\n# WHY:  Auto-handles retries, lineage, data quality, and CDC\n# WHEN: Production pipelines needing quality enforcement\n# ═══════════════════════════════════════════════════════════\n\nimport dlt\nfrom pyspark.sql.functions import current_timestamp\n\n# ─── BRONZE: Raw ingestion layer ───\n@dlt.table(\n    name="bronze_data",\n    comment="Raw data from source — immutable, append-only",\n    table_properties={"quality": "bronze"}\n)\ndef ingest():\n    # Auto Loader handles schema evolution + incremental ingestion\n    return (\n        spark.readStream.format("cloudFiles")\n            .option("cloudFiles.format", "csv")\n            .option("header", "true")\n            .load("/mnt/landing/")\n    )\n\n# ─── SILVER: Clean + quality-enforced layer ───\n@dlt.table(\n    name="silver_data",\n    comment="Validated, deduplicated, standardized data"\n)\n@dlt.expect_or_drop("valid_id", "id IS NOT NULL")         # Drop bad rows\n@dlt.expect_or_drop("valid_amount", "amount > 0")          # Quality rule\n@dlt.expect_or_fail("schema_ok", "email IS NOT NULL")      # Hard fail if fails\ndef clean():\n    # Read from bronze, dedupe, add metadata\n    return (\n        dlt.read("bronze_data")\n            .dropDuplicates(["id"])                        # Dedup by primary key\n            .withColumn("_ts", current_timestamp())         # Audit timestamp\n    )`,
     },
     {
       name: 'Auto Loader',
@@ -1327,8 +1327,28 @@ function ScenarioCard({ scenario }) {
               </span>
             </div>
           )}
-          <div className="code-block" style={{ maxHeight: '350px', overflowY: 'auto' }}>
-            {approaches[activeTab]?.code}
+          <div className="code-block" style={{ overflowX: 'auto' }}>
+            {(approaches[activeTab]?.code || '').split('\n').map((line, i) => {
+              const trimmed = line.trimStart();
+              const isComment =
+                trimmed.startsWith('#') ||
+                trimmed.startsWith('--') ||
+                trimmed.startsWith('//') ||
+                trimmed.startsWith('*') ||
+                trimmed.startsWith('/*');
+              return (
+                <div
+                  key={i}
+                  style={{
+                    color: isComment ? '#92400e' : '#1e40af',
+                    fontStyle: isComment ? 'italic' : 'normal',
+                    whiteSpace: 'pre',
+                  }}
+                >
+                  {line || '\u00a0'}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

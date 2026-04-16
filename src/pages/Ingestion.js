@@ -979,7 +979,7 @@ function CodeApproaches({ scenarioId, scenario }) {
           </div>
 
           {/* Code */}
-          <div className="code-block" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+          <div className="code-block" style={{ overflowX: 'auto' }}>
             {variants[activeApproach].code}
           </div>
         </div>

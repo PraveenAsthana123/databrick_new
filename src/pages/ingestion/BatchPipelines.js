@@ -1080,10 +1080,7 @@ function BatchPipelines() {
                   >
                     View PySpark Code
                   </summary>
-                  <div
-                    className="code-block"
-                    style={{ marginTop: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}
-                  >
+                  <div className="code-block" style={{ marginTop: '0.5rem', overflowX: 'auto' }}>
                     {p.code}
                   </div>
                 </details>

@@ -483,7 +483,7 @@ function UploadDocs() {
                     {previewFile.parsed.totalRows} rows | {previewFile.parsed.headers.length}{' '}
                     columns
                   </p>
-                  <div className="table-wrapper" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  <div className="table-wrapper" style={{ overflowX: 'auto' }}>
                     <table>
                       <thead>
                         <tr>
@@ -508,7 +508,7 @@ function UploadDocs() {
 
               {/* JSON preview */}
               {previewFile.ext === 'json' && previewFile.parsed && (
-                <div className="code-block" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                <div className="code-block" style={{ overflowX: 'auto' }}>
                   {JSON.stringify(previewFile.parsed, null, 2)}
                 </div>
               )}
@@ -516,10 +516,7 @@ function UploadDocs() {
               {/* Text preview */}
               {(previewFile.ext === 'txt' || (previewFile.content && !previewFile.parsed)) &&
                 previewFile.content && (
-                  <div
-                    className="code-block"
-                    style={{ maxHeight: '400px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}
-                  >
+                  <div className="code-block" style={{ overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
                     {previewFile.content}
                   </div>
                 )}

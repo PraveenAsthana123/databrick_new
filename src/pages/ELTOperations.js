@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../components/common/ScenarioCard';
 
 // ─── Tab 1: ELT Transactions (10 scenarios) ────────────────────────────────────
 const eltTransactions = [
@@ -2625,11 +2626,7 @@ function ELTOperations({ filter = 'elt' }) {
                 {expandedId === scenario.id ? '▼' : '▶'}
               </span>
             </div>
-            {expandedId === scenario.id && (
-              <div className="code-block" style={{ marginTop: '1rem' }}>
-                {scenario.code}
-              </div>
-            )}
+            {expandedId === scenario.id && <ScenarioCard scenario={scenario} />}
           </div>
         ))}
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../../components/common/ScenarioCard';
 import { exportToCSV } from '../../utils/fileExport';
 
 const goldOperations = [
@@ -2008,9 +2009,7 @@ function GoldOperations() {
 
             {isExpanded && (
               <div style={{ marginTop: '1rem' }}>
-                <div className="code-block" style={{ maxHeight: '350px', overflowY: 'auto' }}>
-                  {op.code}
-                </div>
+                <ScenarioCard scenario={op} />
               </div>
             )}
           </div>

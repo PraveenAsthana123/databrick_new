@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../../components/common/ScenarioCard';
 import { exportToCSV } from '../../utils/fileExport';
 
 // ═══════════════════════════════════════════════════════════
@@ -1942,24 +1943,7 @@ function BatchIngestion() {
                 </div>
 
                 {/* Code */}
-                <details>
-                  <summary
-                    style={{
-                      cursor: 'pointer',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    View PySpark Code
-                  </summary>
-                  <div
-                    className="code-block"
-                    style={{ marginTop: '0.5rem', maxHeight: '300px', overflowY: 'auto' }}
-                  >
-                    {s.code}
-                  </div>
-                </details>
+                <ScenarioCard scenario={s} />
               </div>
             )}
           </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ScenarioCard from '../../components/common/ScenarioCard';
 import { exportToCSV } from '../../utils/fileExport';
 
 const silverOperations = [
@@ -2197,9 +2198,7 @@ function SilverOperations() {
 
             {isExpanded && (
               <div style={{ marginTop: '1rem' }}>
-                <div className="code-block" style={{ maxHeight: '360px', overflowY: 'auto' }}>
-                  {op.code}
-                </div>
+                <ScenarioCard scenario={op} />
               </div>
             )}
           </div>

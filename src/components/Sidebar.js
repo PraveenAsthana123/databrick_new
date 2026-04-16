@@ -76,7 +76,10 @@ const menuItems = [
   },
   {
     section: 'Data Architect',
-    items: [{ id: 'architect-challenges', icon: '🏗️', label: 'Architect Challenges (120)' }],
+    items: [
+      { id: 'architect-challenges', icon: '🏗️', label: 'Architect Challenges (120)' },
+      { id: 'data-strategy', icon: '🎯', label: 'Data Strategy (20)' },
+    ],
   },
   { section: 'System', items: [{ id: 'settings', icon: '⚙️', label: 'Settings' }] },
 ];

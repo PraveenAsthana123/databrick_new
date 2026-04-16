@@ -18,6 +18,10 @@ const BronzeOperations = lazy(() => import('./pages/medallion/BronzeOperations')
 const DataArchitectChallenges = lazy(() => import('./pages/architect/DataArchitectChallenges'));
 const DataStrategy = lazy(() => import('./pages/architect/DataStrategy'));
 const DataMaturityModel = lazy(() => import('./pages/architect/DataMaturityModel'));
+const MaturityAssessment = lazy(() => import('./pages/architect/MaturityAssessment'));
+const DataRoadmap = lazy(() => import('./pages/architect/DataRoadmap'));
+const DataFinOps = lazy(() => import('./pages/architect/DataFinOps'));
+const ProductionSupport = lazy(() => import('./pages/architect/ProductionSupport'));
 const SilverOperations = lazy(() => import('./pages/medallion/SilverOperations'));
 const GoldOperations = lazy(() => import('./pages/medallion/GoldOperations'));
 const Modeling = lazy(() => import('./pages/Modeling'));
@@ -116,6 +120,14 @@ function App() {
         return <SimulationTools />;
       case 'data-strategy':
         return <DataStrategy />;
+      case 'maturity-assessment':
+        return <MaturityAssessment />;
+      case 'data-roadmap':
+        return <DataRoadmap />;
+      case 'data-finops':
+        return <DataFinOps />;
+      case 'production-support':
+        return <ProductionSupport />;
       case 'maturity-model':
         return <DataMaturityModel />;
       case 'architect-challenges':

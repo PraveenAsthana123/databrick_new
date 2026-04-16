@@ -27,6 +27,29 @@ const IngestionChallenges = lazy(() => import('./pages/architect/IngestionChalle
 const ModelingChallenges = lazy(() => import('./pages/architect/ModelingChallenges'));
 const GovernanceChallenges = lazy(() => import('./pages/architect/GovernanceChallenges'));
 const VisualizationChallenges = lazy(() => import('./pages/architect/VisualizationChallenges'));
+const IngestionImplementation = lazy(() => import('./pages/architect/IngestionImplementation'));
+const ModelingImplementation = lazy(() => import('./pages/architect/ModelingImplementation'));
+const GovernanceImplementation = lazy(() => import('./pages/architect/GovernanceImplementation'));
+const VisualizationImplementation = lazy(
+  () => import('./pages/architect/VisualizationImplementation')
+);
+const AIGovernance = lazy(() => import('./pages/architect/AIGovernance'));
+const DataAISecurity = lazy(() => import('./pages/architect/DataAISecurity'));
+const DataTestingImplementation = lazy(() => import('./pages/architect/DataTestingImplementation'));
+const IngestionProductionSupport = lazy(
+  () => import('./pages/architect/IngestionProductionSupport')
+);
+const ModelingProductionSupport = lazy(() => import('./pages/architect/ModelingProductionSupport'));
+const GovernanceProductionSupport = lazy(
+  () => import('./pages/architect/GovernanceProductionSupport')
+);
+const DevOpsProductionSupport = lazy(() => import('./pages/architect/DevOpsProductionSupport'));
+const SecurityProductionSupport = lazy(() => import('./pages/architect/SecurityProductionSupport'));
+const ObservabilityProductionSupport = lazy(
+  () => import('./pages/architect/ObservabilityProductionSupport')
+);
+const AIMLProductionSupport = lazy(() => import('./pages/architect/AIMLProductionSupport'));
+const EndToEndArchitecture = lazy(() => import('./pages/architect/EndToEndArchitecture'));
 const SilverOperations = lazy(() => import('./pages/medallion/SilverOperations'));
 const GoldOperations = lazy(() => import('./pages/medallion/GoldOperations'));
 const Modeling = lazy(() => import('./pages/Modeling'));
@@ -147,6 +170,36 @@ function App() {
         return <GovernanceChallenges />;
       case 'visualization-challenges':
         return <VisualizationChallenges />;
+      case 'ingestion-impl':
+        return <IngestionImplementation />;
+      case 'modeling-impl':
+        return <ModelingImplementation />;
+      case 'governance-impl':
+        return <GovernanceImplementation />;
+      case 'visualization-impl':
+        return <VisualizationImplementation />;
+      case 'ai-governance':
+        return <AIGovernance />;
+      case 'data-ai-security':
+        return <DataAISecurity />;
+      case 'data-testing-impl':
+        return <DataTestingImplementation />;
+      case 'ingestion-prod-support':
+        return <IngestionProductionSupport />;
+      case 'modeling-prod-support':
+        return <ModelingProductionSupport />;
+      case 'governance-prod-support':
+        return <GovernanceProductionSupport />;
+      case 'devops-prod-support':
+        return <DevOpsProductionSupport />;
+      case 'security-prod-support':
+        return <SecurityProductionSupport />;
+      case 'observability-prod-support':
+        return <ObservabilityProductionSupport />;
+      case 'ai-ml-prod-support':
+        return <AIMLProductionSupport />;
+      case 'e2e-architecture':
+        return <EndToEndArchitecture />;
       case 'settings':
         return <Settings />;
       default:

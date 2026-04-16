@@ -91,6 +91,34 @@ const menuItems = [
       { id: 'visualization-challenges', icon: '📈', label: 'Visualization Challenges (40)' },
     ],
   },
+  {
+    section: 'Implementation (Enterprise)',
+    items: [
+      { id: 'ingestion-impl', icon: '🔧', label: 'Ingestion Impl (20)' },
+      { id: 'modeling-impl', icon: '🛠️', label: 'Modeling Impl (30)' },
+      { id: 'governance-impl', icon: '⚖️', label: 'Governance Impl (30)' },
+      { id: 'visualization-impl', icon: '📊', label: 'Visualization Impl (30)' },
+      { id: 'ai-governance', icon: '🤖', label: 'AI Governance (30)' },
+      { id: 'data-ai-security', icon: '🔐', label: 'Data + AI Security (30)' },
+      { id: 'data-testing-impl', icon: '✅', label: 'Data Testing Impl (19)' },
+    ],
+  },
+  {
+    section: 'Production Support (L1-L4)',
+    items: [
+      { id: 'ingestion-prod-support', icon: '🟢', label: 'Ingestion Prod Support' },
+      { id: 'modeling-prod-support', icon: '🟡', label: 'Modeling Prod Support' },
+      { id: 'governance-prod-support', icon: '🔵', label: 'Governance Prod Support' },
+      { id: 'devops-prod-support', icon: '🚀', label: 'DevOps Prod Support' },
+      { id: 'security-prod-support', icon: '🛑', label: 'Security Prod Support' },
+      { id: 'observability-prod-support', icon: '🔭', label: 'Observability / AIOps' },
+      { id: 'ai-ml-prod-support', icon: '🧠', label: 'AI / ML / GenAI Support' },
+    ],
+  },
+  {
+    section: 'Reference Architecture',
+    items: [{ id: 'e2e-architecture', icon: '🏛️', label: 'End-to-End Architecture' }],
+  },
   { section: 'System', items: [{ id: 'settings', icon: '⚙️', label: 'Settings' }] },
 ];
 

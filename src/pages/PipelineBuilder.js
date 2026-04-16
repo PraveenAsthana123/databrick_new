@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { exportToCSV, exportToJSON } from '../utils/fileExport';
 import { getSampleData } from '../utils/sampleData';
 import DataPreview from '../components/common/DataPreview';
+import ScenarioCard from '../components/common/ScenarioCard';
 
 const pipelines = [
   {
@@ -965,11 +966,7 @@ function PipelineBuilder() {
               {previewId === p.id && (
                 <DataPreview data={getSampleData(p.id)} onClose={() => setPreviewId(null)} />
               )}
-              {expandedId === p.id && (
-                <div className="code-block" style={{ marginTop: '1rem' }}>
-                  {p.code}
-                </div>
-              )}
+              {expandedId === p.id && <ScenarioCard scenario={p} />}
             </div>
           ))}
         </>

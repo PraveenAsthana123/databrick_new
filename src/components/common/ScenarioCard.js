@@ -298,7 +298,159 @@ function generateExplanation(scenario) {
     impact = 'Reduces cloud spend by identifying waste and optimizing resource usage.';
   }
 
-  return { what, why, when, steps, impact, flow, category };
+  // Architecture — ASCII flow
+  const architecture = `Source System
+     |
+     v (Extract)
++----------------+
+|  Landing Zone  | <- Raw files / API response
++----------------+
+     |
+     v (Ingest with schema validation)
++----------------+
+|  Bronze Layer  | <- Immutable, append-only
++----------------+
+     |
+     v (Transform: clean, dedupe, enrich)
++----------------+
+|  Silver Layer  | <- Clean, validated, typed
++----------------+
+     |
+     v (Aggregate, business logic)
++----------------+
+|   Gold Layer   | <- BI/ML-ready, trusted
++----------------+
+     |
+     v (Serve)
+  BI / ML / API`;
+
+  // Prerequisites
+  const prerequisites = [
+    'Databricks workspace with Unity Catalog enabled',
+    'Source system credentials stored in Databricks Secrets',
+    'Target catalog/schema created with proper permissions',
+    'Storage credentials + external location configured',
+    'Spark cluster or SQL warehouse provisioned',
+    'Monitoring/alerting endpoints configured',
+  ];
+
+  // Detailed steps (expanded from 6 to 10 with context)
+  const detailedSteps = [
+    {
+      step: 'Connect to Source',
+      detail:
+        'Authenticate using service principal or managed identity. Verify network reachability and read permissions.',
+    },
+    {
+      step: 'Validate Source',
+      detail:
+        'Check source table exists, schema matches contract, row count is within expected range.',
+    },
+    {
+      step: 'Extract Data',
+      detail:
+        'Use appropriate connector (JDBC, Auto Loader, Kafka). Apply partition pruning and column projection to minimize I/O.',
+    },
+    {
+      step: 'Validate Schema',
+      detail:
+        'Enforce expected schema. Handle schema evolution (addNewColumns) or fail fast on breaking changes.',
+    },
+    {
+      step: 'Data Quality Checks',
+      detail:
+        'Run completeness, uniqueness, range, and format validations. Route bad records to quarantine.',
+    },
+    {
+      step: 'Transform Data',
+      detail:
+        'Apply business rules: clean whitespace, standardize formats, enrich with reference data, compute derived fields.',
+    },
+    {
+      step: 'Add Metadata',
+      detail:
+        'Tag with _ingest_ts, _source_file, _batch_id, _pipeline_run_id for lineage and debugging.',
+    },
+    {
+      step: 'Write to Target',
+      detail:
+        'Use appropriate write mode (overwrite/append/merge). Enable mergeSchema if needed. Optimize file size (128MB-1GB).',
+    },
+    {
+      step: 'Verify Write',
+      detail:
+        'Compare source count vs target count. Run reconciliation queries. Log row count delta.',
+    },
+    {
+      step: 'Log Audit Trail',
+      detail:
+        'Record pipeline run: status, duration, rows processed, bytes read/written. Alert on SLA breach.',
+    },
+  ];
+
+  // Testing strategy
+  const testing = [
+    'Unit: Mock source, test transformations in isolation',
+    'Integration: End-to-end with test data in sandbox catalog',
+    'Data Quality: Great Expectations or custom DQ suite',
+    'Performance: Benchmark with 10x expected volume',
+    'Recovery: Test retry, backfill, and disaster recovery paths',
+  ];
+
+  // Monitoring & observability
+  const monitoring = [
+    'Pipeline metrics: success rate, duration, rows processed',
+    'Data quality metrics: null %, duplicate %, schema drift',
+    'SLA tracking: freshness, completion by deadline',
+    'Cost metrics: DBUs, storage growth, query cost',
+    'Alerting: PagerDuty/Slack for failures and SLA breach',
+  ];
+
+  // Common pitfalls
+  const pitfalls = [
+    'Not handling schema evolution → pipeline breaks on new columns',
+    'No idempotency → duplicates on retry',
+    'Missing watermark → late data breaks streaming aggregations',
+    'Over-aggressive dedup → silently drops valid records',
+    'Ignoring partition pruning → full table scans',
+    'No backfill strategy → historical reprocessing is painful',
+  ];
+
+  // Performance tips
+  const performance = [
+    'Partition by access pattern (date for time-series, region for multi-tenant)',
+    'Use Z-ORDER on high-cardinality columns for query acceleration',
+    'Enable Auto Compaction to avoid small file problem',
+    'Broadcast small lookup tables (< 10MB) to avoid shuffles',
+    'Use incremental processing (CDF / streaming) over full reloads',
+  ];
+
+  // Related patterns
+  const relatedPatterns = [
+    'Medallion Architecture (Bronze → Silver → Gold)',
+    'Idempotent Pipelines (safe retries)',
+    'SCD Type 2 (historical tracking)',
+    'CDC with Delta MERGE',
+    'Data Quality Framework (Great Expectations / DLT expectations)',
+  ];
+
+  return {
+    what,
+    why,
+    when,
+    steps,
+    impact,
+    flow,
+    category,
+    architecture,
+    prerequisites,
+    detailedSteps,
+    testing,
+    monitoring,
+    pitfalls,
+    performance,
+    relatedPatterns,
+  };
 }
 
 // Generate code approaches from original code
@@ -523,6 +675,284 @@ function ScenarioCard({ scenario }) {
             ))}
           </ol>
         </div>
+        {/* Detailed sections — collapsible */}
+        <details style={{ marginTop: '0.5rem' }}>
+          <summary
+            style={{
+              cursor: 'pointer',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              color: '#1e40af',
+              padding: '0.3rem 0',
+            }}
+          >
+            {'\ud83d\udcd6'} View Detailed Pipeline Breakdown (Architecture, Prerequisites, 10
+            Steps, Testing, Monitoring, Pitfalls)
+          </summary>
+          <div
+            style={{
+              marginTop: '0.5rem',
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: '0.5rem',
+            }}
+          >
+            {/* Architecture */}
+            <div
+              style={{
+                padding: '0.5rem 0.7rem',
+                background: '#1e1e2e',
+                color: '#cdd6f4',
+                borderRadius: '6px',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  color: '#89b4fa',
+                  textTransform: 'uppercase',
+                  marginBottom: '0.3rem',
+                }}
+              >
+                {'\ud83c\udfd7\ufe0f'} Architecture Flow
+              </div>
+              <pre
+                style={{
+                  fontSize: '0.65rem',
+                  fontFamily: 'monospace',
+                  whiteSpace: 'pre',
+                  margin: 0,
+                }}
+              >
+                {explanation.architecture}
+              </pre>
+            </div>
+
+            {/* Two-column: Prerequisites + Performance */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <div
+                style={{
+                  padding: '0.5rem 0.7rem',
+                  background: 'rgba(255,255,255,0.7)',
+                  borderRadius: '6px',
+                  borderLeft: '3px solid #f59e0b',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    color: '#92400e',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.3rem',
+                  }}
+                >
+                  {'\u2705'} Prerequisites
+                </div>
+                <ul
+                  style={{ fontSize: '0.7rem', color: '#78350f', margin: 0, paddingLeft: '1.1rem' }}
+                >
+                  {explanation.prerequisites.map((p, i) => (
+                    <li key={i} style={{ marginBottom: '0.1rem' }}>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div
+                style={{
+                  padding: '0.5rem 0.7rem',
+                  background: 'rgba(255,255,255,0.7)',
+                  borderRadius: '6px',
+                  borderLeft: '3px solid #06b6d4',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    color: '#155e75',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.3rem',
+                  }}
+                >
+                  {'\u26a1'} Performance Tips
+                </div>
+                <ul
+                  style={{ fontSize: '0.7rem', color: '#164e63', margin: 0, paddingLeft: '1.1rem' }}
+                >
+                  {explanation.performance.map((p, i) => (
+                    <li key={i} style={{ marginBottom: '0.1rem' }}>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Detailed Steps - expanded */}
+            <div
+              style={{
+                padding: '0.5rem 0.7rem',
+                background: 'rgba(255,255,255,0.7)',
+                borderRadius: '6px',
+                borderLeft: '3px solid #10b981',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  color: '#065f46',
+                  textTransform: 'uppercase',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                {'\ud83d\udccb'} Detailed Pipeline Steps (10)
+              </div>
+              <ol
+                style={{ fontSize: '0.72rem', color: '#064e3b', margin: 0, paddingLeft: '1.3rem' }}
+              >
+                {explanation.detailedSteps.map((s, i) => (
+                  <li key={i} style={{ marginBottom: '0.3rem' }}>
+                    <strong>{s.step}:</strong> <span style={{ color: '#047857' }}>{s.detail}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* Three-column: Testing, Monitoring, Pitfalls */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+              <div
+                style={{
+                  padding: '0.5rem 0.7rem',
+                  background: 'rgba(255,255,255,0.7)',
+                  borderRadius: '6px',
+                  borderLeft: '3px solid #8b5cf6',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    color: '#6d28d9',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.3rem',
+                  }}
+                >
+                  {'\ud83e\uddea'} Testing
+                </div>
+                <ul
+                  style={{ fontSize: '0.68rem', color: '#5b21b6', margin: 0, paddingLeft: '1rem' }}
+                >
+                  {explanation.testing.map((t, i) => (
+                    <li key={i} style={{ marginBottom: '0.1rem' }}>
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div
+                style={{
+                  padding: '0.5rem 0.7rem',
+                  background: 'rgba(255,255,255,0.7)',
+                  borderRadius: '6px',
+                  borderLeft: '3px solid #3b82f6',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    color: '#1e40af',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.3rem',
+                  }}
+                >
+                  {'\ud83d\udcca'} Monitoring
+                </div>
+                <ul
+                  style={{ fontSize: '0.68rem', color: '#1e3a8a', margin: 0, paddingLeft: '1rem' }}
+                >
+                  {explanation.monitoring.map((m, i) => (
+                    <li key={i} style={{ marginBottom: '0.1rem' }}>
+                      {m}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div
+                style={{
+                  padding: '0.5rem 0.7rem',
+                  background: '#fef2f2',
+                  borderRadius: '6px',
+                  borderLeft: '3px solid #ef4444',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    color: '#991b1b',
+                    textTransform: 'uppercase',
+                    marginBottom: '0.3rem',
+                  }}
+                >
+                  {'\u26a0\ufe0f'} Common Pitfalls
+                </div>
+                <ul
+                  style={{ fontSize: '0.68rem', color: '#7f1d1d', margin: 0, paddingLeft: '1rem' }}
+                >
+                  {explanation.pitfalls.map((p, i) => (
+                    <li key={i} style={{ marginBottom: '0.1rem' }}>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Related Patterns */}
+            <div
+              style={{
+                padding: '0.5rem 0.7rem',
+                background: 'rgba(255,255,255,0.7)',
+                borderRadius: '6px',
+                borderLeft: '3px solid #ec4899',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  color: '#9f1239',
+                  textTransform: 'uppercase',
+                  marginBottom: '0.3rem',
+                }}
+              >
+                {'\ud83d\udd17'} Related Patterns
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                {explanation.relatedPatterns.map((r, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      padding: '0.15rem 0.5rem',
+                      background: '#fce7f3',
+                      color: '#9f1239',
+                      borderRadius: '10px',
+                      fontSize: '0.68rem',
+                    }}
+                  >
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </details>
+
         <div
           style={{
             marginTop: '0.5rem',

@@ -422,11 +422,12 @@ tbody tr:hover {
 
 /* ===== Code Block ===== */
 .code-block {
-  background-color: #1e1e2e;
-  color: #cdd6f4;
+  background-color: #ffffff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
   border-radius: 8px;
   padding: 1rem 1.25rem;
-  font-family: 'Fira Code', 'Consolas', monospace;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
   font-size: 0.85rem;
   line-height: 1.6;
   overflow-x: auto;
@@ -434,19 +435,22 @@ tbody tr:hover {
 }
 
 .code-block .keyword {
-  color: #cba6f7;
+  color: #1d4ed8;
+  font-weight: 600;
 }
 .code-block .string {
-  color: #a6e3a1;
+  color: #2563eb;
 }
 .code-block .comment {
-  color: #6c7086;
+  color: #60a5fa;
+  font-style: italic;
 }
 .code-block .function {
-  color: #89b4fa;
+  color: #1e3a8a;
+  font-weight: 500;
 }
 .code-block .number {
-  color: #fab387;
+  color: #3b82f6;
 }
 
 /* ===== Grid Layouts ===== */

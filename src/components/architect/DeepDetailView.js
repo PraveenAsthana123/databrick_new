@@ -677,6 +677,7 @@ function inferDomain(item) {
 
 function elaborateChallenge(item) {
   if (item.challengeDetail) return item.challengeDetail;
+  if (item.description) return item.description;
   const haystack = [item.title, item.rootCause, item.why, item.solution]
     .filter(Boolean)
     .join(' ')
@@ -761,6 +762,22 @@ function DeepDetailView({ item }) {
         >
           {challengeDetail}
         </p>
+        {item.scenario && (
+          <div
+            style={{
+              marginTop: '0.75rem',
+              padding: '0.6rem 0.85rem',
+              background: '#fff',
+              border: '1px dashed #fdba74',
+              borderRadius: '8px',
+              color: '#7c2d12',
+              fontSize: '0.85rem',
+              lineHeight: 1.6,
+            }}
+          >
+            <strong style={{ color: '#9a3412' }}>Real enterprise scenario:</strong> {item.scenario}
+          </div>
+        )}
       </div>
 
       {/* Step-by-Step Action Sequence */}

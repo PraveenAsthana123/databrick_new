@@ -23,6 +23,10 @@ const MaturityAssessment = lazy(() => import('./pages/architect/MaturityAssessme
 const DataRoadmap = lazy(() => import('./pages/architect/DataRoadmap'));
 const DataFinOps = lazy(() => import('./pages/architect/DataFinOps'));
 const ProductionSupport = lazy(() => import('./pages/architect/ProductionSupport'));
+const IngestionChallenges = lazy(() => import('./pages/architect/IngestionChallenges'));
+const ModelingChallenges = lazy(() => import('./pages/architect/ModelingChallenges'));
+const GovernanceChallenges = lazy(() => import('./pages/architect/GovernanceChallenges'));
+const VisualizationChallenges = lazy(() => import('./pages/architect/VisualizationChallenges'));
 const SilverOperations = lazy(() => import('./pages/medallion/SilverOperations'));
 const GoldOperations = lazy(() => import('./pages/medallion/GoldOperations'));
 const Modeling = lazy(() => import('./pages/Modeling'));
@@ -135,6 +139,14 @@ function App() {
         return <DataMaturityModel />;
       case 'architect-challenges':
         return <DataArchitectChallenges />;
+      case 'ingestion-challenges':
+        return <IngestionChallenges />;
+      case 'modeling-challenges':
+        return <ModelingChallenges />;
+      case 'governance-challenges':
+        return <GovernanceChallenges />;
+      case 'visualization-challenges':
+        return <VisualizationChallenges />;
       case 'settings':
         return <Settings />;
       default:

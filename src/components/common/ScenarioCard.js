@@ -457,27 +457,128 @@ function generateExplanation(scenario) {
 function generateApproaches(scenario) {
   const code = scenario.code || '# No code provided';
   const title = scenario.title || 'Scenario';
+  const t = title.toUpperCase();
 
   return [
     {
       name: 'Pseudo Code',
       icon: '\ud83d\udccb',
-      code: `ALGORITHM: ${title.toUpperCase()}\n${'='.repeat(Math.min(title.length + 11, 50))}\n\nSTEPS:\n  1. CONNECT to source system\n  2. EXTRACT data (read from source)\n  3. VALIDATE schema + data quality\n  4. TRANSFORM (clean, enrich, standardize)\n  5. LOAD to target (Delta table)\n  6. VERIFY row counts + quality\n  7. LOG audit trail\n\nERROR HANDLING:\n  - Retry on failure (3x with backoff)\n  - Quarantine bad records\n  - Alert on SLA breach`,
+      difficulty: 'Concept',
+      pros: 'Understand the logic before writing code',
+      cons: 'Not executable — blueprint only',
+      code: `ALGORITHM: ${t}\n${'='.repeat(Math.min(t.length + 11, 50))}\n\nSTEPS:\n  1. CONNECT to source system\n  2. EXTRACT data (read from source)\n  3. VALIDATE schema + data quality\n  4. TRANSFORM (clean, enrich, standardize)\n  5. LOAD to target (Delta table)\n  6. VERIFY row counts + quality\n  7. LOG audit trail\n\nERROR HANDLING:\n  - Retry on failure (3x with backoff)\n  - Quarantine bad records\n  - Alert on SLA breach\n\nCOMPLEXITY: O(n) where n = total rows`,
     },
     {
-      name: 'PySpark',
+      name: 'PySpark DataFrame',
       icon: '\u26a1',
+      difficulty: 'Beginner',
+      pros: 'Most common, full control, easy to debug',
+      cons: 'Verbose for simple cases',
       code: code,
     },
     {
-      name: 'Spark SQL',
+      name: 'Spark SQL (DML)',
       icon: '\ud83d\udcdd',
-      code: `-- SQL approach for: ${title}\nCREATE OR REPLACE TABLE catalog.silver.target_table AS\nSELECT *, current_timestamp() AS _processed_ts\nFROM catalog.bronze.source_table\nWHERE id IS NOT NULL\nQUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY _ingest_ts DESC) = 1;`,
+      difficulty: 'Beginner',
+      pros: 'SQL-native, familiar syntax',
+      cons: 'Less programmatic control',
+      code: `-- Spark SQL (DML) for: ${title}\nINSERT OVERWRITE catalog.silver.target_table\nSELECT id, name, email, amount,\n    current_timestamp() AS _processed_ts\nFROM catalog.bronze.source_table\nWHERE id IS NOT NULL\nQUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY _ingest_ts DESC) = 1;`,
     },
     {
-      name: 'DLT',
+      name: 'Spark SQL (DDL)',
+      icon: '\ud83c\udfd7\ufe0f',
+      difficulty: 'Beginner',
+      pros: 'One-liner table creation, idempotent',
+      cons: 'Less flexibility for complex transforms',
+      code: `-- Spark SQL (DDL) for: ${title}\nCREATE OR REPLACE TABLE catalog.silver.target_table\nUSING DELTA\nPARTITIONED BY (date_col)\nTBLPROPERTIES ('delta.autoOptimize.optimizeWrite' = 'true')\nAS\nSELECT *, current_timestamp() AS _processed_ts\nFROM catalog.bronze.source_table;\n\n-- Or use COPY INTO (idempotent)\nCOPY INTO catalog.bronze.source_table\nFROM 's3://bucket/data/'\nFILEFORMAT = CSV\nFORMAT_OPTIONS ('header' = 'true', 'inferSchema' = 'true');`,
+    },
+    {
+      name: 'Delta Live Tables',
       icon: '\ud83d\ude80',
-      code: `# Delta Live Tables approach\nimport dlt\n\n@dlt.table(name="target_table", comment="${title}")\n@dlt.expect_or_drop("valid_id", "id IS NOT NULL")\ndef process():\n    return dlt.read("source_table")`,
+      difficulty: 'Intermediate',
+      pros: 'Declarative, auto-manages dependencies, built-in quality',
+      cons: 'Requires DLT pipeline setup',
+      code: `# Delta Live Tables (DLT) for: ${title}\nimport dlt\nfrom pyspark.sql.functions import current_timestamp\n\n@dlt.table(\n    name="bronze_data",\n    comment="Raw data from source",\n    table_properties={"quality": "bronze"}\n)\ndef ingest():\n    return spark.read.format("csv").option("header","true").load("/mnt/landing/")\n\n@dlt.table(name="silver_data")\n@dlt.expect_or_drop("valid_id", "id IS NOT NULL")\n@dlt.expect_or_drop("valid_amount", "amount > 0")\ndef clean():\n    return dlt.read("bronze_data").dropDuplicates(["id"]) \\\n        .withColumn("_ts", current_timestamp())`,
+    },
+    {
+      name: 'Auto Loader',
+      icon: '\ud83c\udf0a',
+      difficulty: 'Intermediate',
+      pros: 'Incremental, handles new files automatically, schema evolution',
+      cons: 'Requires checkpoint location, streaming complexity',
+      code: `# Auto Loader (cloudFiles) for: ${title}\ndf = spark.readStream.format("cloudFiles") \\\n    .option("cloudFiles.format", "json") \\\n    .option("cloudFiles.schemaLocation", "/mnt/schema/pipeline") \\\n    .option("cloudFiles.schemaEvolutionMode", "addNewColumns") \\\n    .load("s3://bucket/data/")\n\ndf.writeStream.format("delta") \\\n    .option("checkpointLocation", "/mnt/cp/bronze") \\\n    .option("mergeSchema", "true") \\\n    .trigger(availableNow=True) \\\n    .toTable("catalog.bronze.data")`,
+    },
+    {
+      name: 'Structured Streaming',
+      icon: '\ud83d\udce1',
+      difficulty: 'Intermediate',
+      pros: 'True streaming, exactly-once processing, low latency',
+      cons: 'Requires watermarking, stateful operations complex',
+      code: `# Structured Streaming for: ${title}\nfrom pyspark.sql.functions import col, current_timestamp\n\nstream_df = spark.readStream.format("kafka") \\\n    .option("kafka.bootstrap.servers", "broker:9092") \\\n    .option("subscribe", "events") \\\n    .option("startingOffsets", "latest") \\\n    .load()\n\nparsed = stream_df.select(col("value").cast("string").alias("event")) \\\n    .withColumn("_ingest_ts", current_timestamp()) \\\n    .withWatermark("_ingest_ts", "5 minutes")\n\nparsed.writeStream.format("delta") \\\n    .option("checkpointLocation", "/mnt/cp/stream") \\\n    .outputMode("append") \\\n    .trigger(processingTime="10 seconds") \\\n    .toTable("catalog.bronze.stream_events")`,
+    },
+    {
+      name: 'Pandas on Spark',
+      icon: '\ud83d\udc3c',
+      difficulty: 'Beginner',
+      pros: 'Familiar pandas API, good for small-medium data',
+      cons: 'Not ideal for very large datasets, limited Spark optimizations',
+      code: `# Pandas on Spark (pandas API on Spark) for: ${title}\nimport pyspark.pandas as ps\n\n# Read with pandas API\npdf = ps.read_csv("s3://bucket/data/orders.csv")\n\n# Familiar pandas operations\npdf["_ingest_ts"] = ps.Timestamp.now()\npdf = pdf.dropna(subset=["id"])\npdf = pdf.drop_duplicates(subset=["id"])\npdf["name"] = pdf["name"].str.strip().str.title()\npdf["email"] = pdf["email"].str.lower()\n\n# Save as Delta\npdf.to_delta("catalog.bronze.csv_data", mode="overwrite")\nprint(f"Loaded {len(pdf)} rows")`,
+    },
+    {
+      name: 'Scala Spark',
+      icon: '\ud83c\udfa9',
+      difficulty: 'Advanced',
+      pros: 'JVM-native performance, type-safe, best for complex UDFs',
+      cons: 'Steeper learning curve, less Databricks tooling',
+      code: `// Scala Spark for: ${title}\nimport org.apache.spark.sql.functions._\nimport org.apache.spark.sql.SparkSession\n\nval spark = SparkSession.builder().getOrCreate()\n\nval df = spark.read\n  .format("csv")\n  .option("header", "true")\n  .option("inferSchema", "true")\n  .load("s3://bucket/data/")\n\nval cleaned = df\n  .dropDuplicates("id")\n  .filter(col("id").isNotNull)\n  .withColumn("_ingest_ts", current_timestamp())\n\ncleaned.write\n  .format("delta")\n  .mode("overwrite")\n  .saveAsTable("catalog.bronze.data")`,
+    },
+    {
+      name: 'dbutils + Notebook',
+      icon: '\ud83d\udcd3',
+      difficulty: 'Beginner',
+      pros: 'Simple, good for ad-hoc, widget parameters',
+      cons: 'Not production-grade, hard to test, no scheduling',
+      code: `# dbutils + Notebook widgets for: ${title}\n\n# Widget parameters\ndbutils.widgets.text("source_path", "s3://bucket/data/", "Source")\ndbutils.widgets.dropdown("mode", "overwrite", ["overwrite","append"], "Mode")\ndbutils.widgets.text("env", "dev", "Environment")\n\nsource = dbutils.widgets.get("source_path")\nmode = dbutils.widgets.get("mode")\nenv = dbutils.widgets.get("env")\n\n# List files\nfiles = dbutils.fs.ls(source)\nprint(f"Found {len(files)} files")\n\n# Load\ndf = spark.read.option("header", True).csv(source)\ndf.write.format("delta").mode(mode).saveAsTable(f"{env}.bronze.data")\n\n# Display result\ndisplay(df.limit(10))\nprint(f"Done: {df.count()} rows written")`,
+    },
+    {
+      name: 'Airflow DAG',
+      icon: '\ud83d\udd00',
+      difficulty: 'Intermediate',
+      pros: 'Orchestration, dependencies, retries, monitoring',
+      cons: 'External tool, adds complexity',
+      code: `# Airflow DAG for: ${title}\nfrom airflow import DAG\nfrom airflow.providers.databricks.operators.databricks import DatabricksRunNowOperator\nfrom datetime import datetime, timedelta\n\ndefault_args = {\n    'owner': 'data-team',\n    'retries': 3,\n    'retry_delay': timedelta(minutes=5),\n    'email_on_failure': True,\n}\n\nwith DAG(\n    dag_id='${title.toLowerCase().replace(/ /g, '_')}',\n    default_args=default_args,\n    schedule_interval='0 6 * * *',  # Daily at 6 AM\n    start_date=datetime(2024, 1, 1),\n    catchup=False,\n) as dag:\n\n    run_pipeline = DatabricksRunNowOperator(\n        task_id='run_databricks_job',\n        databricks_conn_id='databricks_default',\n        job_id=12345,\n        notebook_params={'env': 'prod'},\n    )`,
+    },
+    {
+      name: 'Databricks Jobs API',
+      icon: '\ud83d\udd27',
+      difficulty: 'Intermediate',
+      pros: 'Programmatic automation, CI/CD integration',
+      cons: 'Requires API token management',
+      code: `# Databricks Jobs API for: ${title}\nimport requests, json\n\ntoken = dbutils.secrets.get("scope", "databricks_token")\nhost = "https://adb-xxx.azuredatabricks.net"\nheaders = {"Authorization": f"Bearer {token}"}\n\n# Create job\njob_config = {\n    "name": "${title}",\n    "tasks": [{\n        "task_key": "main",\n        "notebook_task": {"notebook_path": "/Workflows/pipeline"},\n        "new_cluster": {\n            "spark_version": "14.3.x-scala2.12",\n            "node_type_id": "Standard_DS3_v2",\n            "num_workers": 4\n        }\n    }],\n    "schedule": {"quartz_cron_expression": "0 0 6 * * ?", "timezone_id": "UTC"}\n}\n\nresp = requests.post(f"{host}/api/2.1/jobs/create",\n    headers=headers, json=job_config, timeout=30)\njob_id = resp.json()["job_id"]\nprint(f"Created job: {job_id}")\n\n# Trigger run\nrequests.post(f"{host}/api/2.1/jobs/run-now",\n    headers=headers, json={"job_id": job_id}, timeout=30)`,
+    },
+    {
+      name: 'Snowflake SQL',
+      icon: '\u2744\ufe0f',
+      difficulty: 'Beginner',
+      pros: 'Works on Snowflake too, cross-platform SQL',
+      cons: 'Snowflake-specific syntax, different from Spark SQL',
+      code: `-- Snowflake SQL for: ${title}\n-- Create target table\nCREATE OR REPLACE TABLE MY_DB.SILVER.TARGET_TABLE (\n    id INTEGER,\n    name VARCHAR,\n    email VARCHAR,\n    amount DECIMAL(18,2),\n    _ingest_ts TIMESTAMP_NTZ\n);\n\n-- Copy from stage (S3/ADLS)\nCOPY INTO MY_DB.BRONZE.SOURCE_TABLE\nFROM @MY_STAGE/path/\nFILE_FORMAT = (TYPE = CSV SKIP_HEADER = 1)\nON_ERROR = 'CONTINUE';\n\n-- Merge into target\nMERGE INTO MY_DB.SILVER.TARGET_TABLE t\nUSING MY_DB.BRONZE.SOURCE_TABLE s\n    ON t.id = s.id\nWHEN MATCHED THEN UPDATE SET\n    name = s.name, email = LOWER(s.email),\n    _ingest_ts = CURRENT_TIMESTAMP()\nWHEN NOT MATCHED THEN INSERT VALUES (\n    s.id, s.name, LOWER(s.email), s.amount, CURRENT_TIMESTAMP()\n);`,
+    },
+    {
+      name: 'dbt Model',
+      icon: '\ud83d\udc24',
+      difficulty: 'Intermediate',
+      pros: 'Version-controlled SQL, testing, lineage, documentation',
+      cons: 'Requires dbt setup, learning curve',
+      code: `-- dbt model: models/silver/${title.toLowerCase().replace(/ /g, '_')}.sql\n{{ config(\n    materialized='incremental',\n    unique_key='id',\n    partition_by={'field': 'date_col', 'data_type': 'date'},\n    cluster_by=['customer_id']\n) }}\n\nSELECT\n    id,\n    TRIM(name) AS name,\n    LOWER(email) AS email,\n    CAST(amount AS DECIMAL(18,2)) AS amount,\n    date_col,\n    current_timestamp() AS _processed_ts\nFROM {{ ref('bronze_source_table') }}\nWHERE id IS NOT NULL\n\n{% if is_incremental() %}\n  AND _ingest_ts > (SELECT MAX(_processed_ts) FROM {{ this }})\n{% endif %}\n\nQUALIFY ROW_NUMBER() OVER (PARTITION BY id ORDER BY _ingest_ts DESC) = 1`,
+    },
+    {
+      name: 'Terraform IaC',
+      icon: '\ud83c\udfd7\ufe0f',
+      difficulty: 'Advanced',
+      pros: 'Infrastructure as code, versioned, reproducible',
+      cons: 'Defines jobs, not logic — pairs with other approaches',
+      code: `# Terraform: Databricks job for "${title}"\nterraform {\n  required_providers {\n    databricks = { source = "databricks/databricks" }\n  }\n}\n\nresource "databricks_job" "${title.toLowerCase().replace(/ /g, '_')}" {\n  name = "${title}"\n\n  task {\n    task_key = "run_pipeline"\n    \n    new_cluster {\n      spark_version = "14.3.x-scala2.12"\n      node_type_id  = "Standard_DS3_v2"\n      num_workers   = 4\n      autotermination_minutes = 20\n    }\n\n    notebook_task {\n      notebook_path = "/Workflows/pipeline"\n      base_parameters = { env = "prod" }\n    }\n  }\n\n  schedule {\n    quartz_cron_expression = "0 0 6 * * ?"\n    timezone_id = "UTC"\n  }\n\n  email_notifications {\n    on_failure = ["alerts@company.com"]\n  }\n}`,
     },
   ];
 }
@@ -1179,7 +1280,54 @@ function ScenarioCard({ scenario }) {
           ))}
         </div>
         <div style={{ padding: '0.75rem' }}>
-          <div className="code-block" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+          {/* Meta: difficulty, pros, cons */}
+          {approaches[activeTab] && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginBottom: '0.6rem',
+                flexWrap: 'wrap',
+                fontSize: '0.72rem',
+              }}
+            >
+              <span>
+                <b>Difficulty:</b>{' '}
+                <span
+                  style={{
+                    padding: '0.1rem 0.4rem',
+                    borderRadius: '3px',
+                    fontSize: '0.68rem',
+                    background:
+                      approaches[activeTab].difficulty === 'Beginner'
+                        ? '#dcfce7'
+                        : approaches[activeTab].difficulty === 'Intermediate'
+                          ? '#fef3c7'
+                          : approaches[activeTab].difficulty === 'Advanced'
+                            ? '#fee2e2'
+                            : '#e0e7ff',
+                    color:
+                      approaches[activeTab].difficulty === 'Beginner'
+                        ? '#166534'
+                        : approaches[activeTab].difficulty === 'Intermediate'
+                          ? '#92400e'
+                          : approaches[activeTab].difficulty === 'Advanced'
+                            ? '#991b1b'
+                            : '#3730a3',
+                  }}
+                >
+                  {approaches[activeTab].difficulty}
+                </span>
+              </span>
+              <span style={{ color: '#166534' }}>
+                <b>Pros:</b> {approaches[activeTab].pros}
+              </span>
+              <span style={{ color: '#991b1b' }}>
+                <b>Cons:</b> {approaches[activeTab].cons}
+              </span>
+            </div>
+          )}
+          <div className="code-block" style={{ maxHeight: '350px', overflowY: 'auto' }}>
             {approaches[activeTab]?.code}
           </div>
         </div>

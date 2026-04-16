@@ -119,6 +119,14 @@ const menuItems = [
     section: 'Reference Architecture',
     items: [{ id: 'e2e-architecture', icon: '🏛️', label: 'End-to-End Architecture' }],
   },
+  {
+    section: 'Issue Catalogs',
+    items: [
+      { id: 'databricks-prod-issues', icon: '🔥', label: 'Databricks Prod Issues (50)' },
+      { id: 'implementation-issues', icon: '🧱', label: 'Implementation Issues (50)' },
+      { id: 'pipeline-scenarios', icon: '🔀', label: 'Pipeline Scenarios (50)' },
+    ],
+  },
   { section: 'System', items: [{ id: 'settings', icon: '⚙️', label: 'Settings' }] },
 ];
 

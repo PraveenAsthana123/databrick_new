@@ -50,6 +50,11 @@ const ObservabilityProductionSupport = lazy(
 );
 const AIMLProductionSupport = lazy(() => import('./pages/architect/AIMLProductionSupport'));
 const EndToEndArchitecture = lazy(() => import('./pages/architect/EndToEndArchitecture'));
+const DatabricksProductionIssues = lazy(
+  () => import('./pages/architect/DatabricksProductionIssues')
+);
+const ImplementationIssues = lazy(() => import('./pages/architect/ImplementationIssues'));
+const PipelineScenarios = lazy(() => import('./pages/architect/PipelineScenarios'));
 const SilverOperations = lazy(() => import('./pages/medallion/SilverOperations'));
 const GoldOperations = lazy(() => import('./pages/medallion/GoldOperations'));
 const Modeling = lazy(() => import('./pages/Modeling'));
@@ -200,6 +205,12 @@ function App() {
         return <AIMLProductionSupport />;
       case 'e2e-architecture':
         return <EndToEndArchitecture />;
+      case 'databricks-prod-issues':
+        return <DatabricksProductionIssues />;
+      case 'implementation-issues':
+        return <ImplementationIssues />;
+      case 'pipeline-scenarios':
+        return <PipelineScenarios />;
       case 'settings':
         return <Settings />;
       default:

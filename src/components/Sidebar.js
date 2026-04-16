@@ -79,6 +79,7 @@ const menuItems = [
     items: [
       { id: 'architect-challenges', icon: '🏗️', label: 'Architect Challenges (120)' },
       { id: 'data-strategy', icon: '🎯', label: 'Data Strategy (20)' },
+      { id: 'maturity-model', icon: '📊', label: 'Maturity Model (5 Levels)' },
     ],
   },
   { section: 'System', items: [{ id: 'settings', icon: '⚙️', label: 'Settings' }] },

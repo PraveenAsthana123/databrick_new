@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  exportToCSV,
-  exportToJSON,
-  exportToXML,
-  exportToAvro,
-  exportToText,
-  exportToParquet,
-} from '../../utils/fileExport';
+import FileFormatRunner from '../common/FileFormatRunner';
 
 /**
  * ProductionSupportLibrary — renders L1-L4 support playbooks.
@@ -164,54 +157,11 @@ function ProductionSupportLibrary({ pageTitle, pageSubtitle, coverage, levels, c
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Click any issue to see full triage + resolution
           </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {[
-              {
-                fmt: 'text',
-                fn: () => exportToText(allRows, csvName.replace(/\.\w+$/, '.txt')),
-                label: 'Text',
-                icon: '📝',
-              },
-              { fmt: 'csv', fn: () => exportToCSV(allRows, csvName), label: 'CSV', icon: '📄' },
-              {
-                fmt: 'parquet',
-                fn: () =>
-                  exportToParquet(allRows, csvName.replace(/\.\w+$/, '.parquet.json'), 'Issue'),
-                label: 'Parquet',
-                icon: '🧱',
-              },
-              {
-                fmt: 'json',
-                fn: () => exportToJSON(allRows, csvName.replace(/\.\w+$/, '.json')),
-                label: 'JSON',
-                icon: '{ }',
-              },
-              {
-                fmt: 'avro',
-                fn: () => exportToAvro(allRows, csvName.replace(/\.\w+$/, '.avro.json'), 'Issue'),
-                label: 'Avro',
-                icon: '🔷',
-              },
-              {
-                fmt: 'xml',
-                fn: () =>
-                  exportToXML(allRows, csvName.replace(/\.\w+$/, '.xml'), 'issues', 'issue'),
-                label: 'XML',
-                icon: '< >',
-              },
-            ].map((b) => (
-              <button
-                key={b.fmt}
-                className="btn btn-secondary btn-sm"
-                onClick={b.fn}
-                title={`Download as ${b.label}`}
-              >
-                {b.icon} {b.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
+
+      {/* File Format Selector + Run Command */}
+      <FileFormatRunner data={allRows} slug={csvName.replace(/\.\w+$/, '')} schemaName="Issue" />
 
       {['L1', 'L2', 'L3', 'L4'].map((lvl) => {
         const meta = LEVEL_META[lvl];

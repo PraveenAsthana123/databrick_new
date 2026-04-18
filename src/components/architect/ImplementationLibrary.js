@@ -1,12 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  exportToCSV,
-  exportToJSON,
-  exportToXML,
-  exportToAvro,
-  exportToText,
-  exportToParquet,
-} from '../../utils/fileExport';
+import FileFormatRunner from '../common/FileFormatRunner';
 
 /**
  * ImplementationLibrary — renders enterprise implementation tables.
@@ -110,53 +103,11 @@ function ImplementationLibrary({
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Click any row to expand all 11 dimensions
           </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {[
-              {
-                fmt: 'text',
-                fn: () => exportToText(rows, csvName.replace(/\.\w+$/, '.txt')),
-                label: 'Text',
-                icon: '📝',
-              },
-              { fmt: 'csv', fn: () => exportToCSV(rows, csvName), label: 'CSV', icon: '📄' },
-              {
-                fmt: 'parquet',
-                fn: () =>
-                  exportToParquet(rows, csvName.replace(/\.\w+$/, '.parquet.json'), 'Topic'),
-                label: 'Parquet',
-                icon: '🧱',
-              },
-              {
-                fmt: 'json',
-                fn: () => exportToJSON(rows, csvName.replace(/\.\w+$/, '.json')),
-                label: 'JSON',
-                icon: '{ }',
-              },
-              {
-                fmt: 'avro',
-                fn: () => exportToAvro(rows, csvName.replace(/\.\w+$/, '.avro.json'), 'Topic'),
-                label: 'Avro',
-                icon: '🔷',
-              },
-              {
-                fmt: 'xml',
-                fn: () => exportToXML(rows, csvName.replace(/\.\w+$/, '.xml'), 'topics', 'topic'),
-                label: 'XML',
-                icon: '< >',
-              },
-            ].map((b) => (
-              <button
-                key={b.fmt}
-                className="btn btn-secondary btn-sm"
-                onClick={b.fn}
-                title={`Download as ${b.label}`}
-              >
-                {b.icon} {b.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
+
+      {/* File Format Selector + Run Command */}
+      <FileFormatRunner data={rows} slug={csvName.replace(/\.\w+$/, '')} schemaName="Topic" />
 
       {filtered.length === 0 && (
         <div

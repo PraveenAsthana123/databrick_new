@@ -1,13 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import {
-  exportToCSV,
-  exportToJSON,
-  exportToXML,
-  exportToAvro,
-  exportToText,
-  exportToParquet,
-} from '../../utils/fileExport';
 import DeepDetailView from './DeepDetailView';
+import FileFormatRunner from '../common/FileFormatRunner';
 
 /**
  * ChallengeLibrary — generic page for enterprise-challenge catalogs.
@@ -52,31 +45,6 @@ function ChallengeLibrary({
 
   const baseName = csvName.replace(/\.\w+$/, '');
 
-  const downloadAs = (format) => {
-    switch (format) {
-      case 'text':
-        exportToText(exportData, `${baseName}.txt`);
-        break;
-      case 'csv':
-        exportToCSV(exportData, `${baseName}.csv`);
-        break;
-      case 'parquet':
-        exportToParquet(exportData, `${baseName}.parquet.json`, 'Challenge');
-        break;
-      case 'json':
-        exportToJSON(exportData, `${baseName}.json`);
-        break;
-      case 'avro':
-        exportToAvro(exportData, `${baseName}.avro.json`, 'Challenge');
-        break;
-      case 'xml':
-        exportToXML(exportData, `${baseName}.xml`, 'challenges', 'challenge');
-        break;
-      default:
-        break;
-    }
-  };
-
   return (
     <div>
       {/* Page Header */}
@@ -119,7 +87,10 @@ function ChallengeLibrary({
         </div>
       </div>
 
-      {/* Search + Multi-format Download */}
+      {/* File Format Selector + Run Command */}
+      <FileFormatRunner data={exportData} slug={baseName} schemaName="Challenge" />
+
+      {/* Search */}
       <div className="card" style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
@@ -133,25 +104,6 @@ function ChallengeLibrary({
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Click any row to expand full detail
           </span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            {[
-              { fmt: 'text', label: 'Text', icon: '📝' },
-              { fmt: 'csv', label: 'CSV', icon: '📄' },
-              { fmt: 'parquet', label: 'Parquet', icon: '🧱' },
-              { fmt: 'json', label: 'JSON', icon: '{ }' },
-              { fmt: 'avro', label: 'Avro', icon: '🔷' },
-              { fmt: 'xml', label: 'XML', icon: '< >' },
-            ].map((b) => (
-              <button
-                key={b.fmt}
-                className="btn btn-secondary btn-sm"
-                onClick={() => downloadAs(b.fmt)}
-                title={`Download as ${b.label}`}
-              >
-                {b.icon} {b.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 

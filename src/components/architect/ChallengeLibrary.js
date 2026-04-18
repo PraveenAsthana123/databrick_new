@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { exportToCSV } from '../../utils/fileExport';
+import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
 import DeepDetailView from './DeepDetailView';
 
 /**
@@ -32,20 +32,36 @@ function ChallengeLibrary({
     );
   }, [challenges, search]);
 
-  const downloadCSV = () => {
-    exportToCSV(
-      challenges.map((c) => ({
-        id: c.id,
-        title: c.title,
-        description: c.description,
-        scenario: c.scenario,
-        impact: c.impact,
-        rootCause: c.rootCause,
-        solution: c.solution,
-        tools: c.tools,
-      })),
-      csvName
-    );
+  const exportData = challenges.map((c) => ({
+    id: c.id,
+    title: c.title,
+    description: c.description,
+    scenario: c.scenario,
+    impact: c.impact,
+    rootCause: c.rootCause,
+    solution: c.solution,
+    tools: c.tools,
+  }));
+
+  const baseName = csvName.replace(/\.\w+$/, '');
+
+  const downloadAs = (format) => {
+    switch (format) {
+      case 'csv':
+        exportToCSV(exportData, `${baseName}.csv`);
+        break;
+      case 'json':
+        exportToJSON(exportData, `${baseName}.json`);
+        break;
+      case 'xml':
+        exportToXML(exportData, `${baseName}.xml`, 'challenges', 'challenge');
+        break;
+      case 'avro':
+        exportToAvro(exportData, `${baseName}.avro.json`, 'Challenge');
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -90,7 +106,7 @@ function ChallengeLibrary({
         </div>
       </div>
 
-      {/* Search + CSV */}
+      {/* Search + Multi-format Download */}
       <div className="card" style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
@@ -104,13 +120,23 @@ function ChallengeLibrary({
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Click any row to expand full detail
           </span>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={downloadCSV}
-            style={{ marginLeft: 'auto' }}
-          >
-            Download CSV
-          </button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {[
+              { fmt: 'csv', label: 'CSV', icon: '📄' },
+              { fmt: 'json', label: 'JSON', icon: '{ }' },
+              { fmt: 'xml', label: 'XML', icon: '< >' },
+              { fmt: 'avro', label: 'Avro', icon: '🔷' },
+            ].map((b) => (
+              <button
+                key={b.fmt}
+                className="btn btn-secondary btn-sm"
+                onClick={() => downloadAs(b.fmt)}
+                title={`Download as ${b.label}`}
+              >
+                {b.icon} {b.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

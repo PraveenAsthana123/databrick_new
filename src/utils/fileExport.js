@@ -105,12 +105,19 @@ export function exportToCSV(data, filename = 'export.csv', options = {}) {
   const headers = Object.keys(data[0]);
   const headerRow = headers.join(separator);
 
+  // Characters that trigger formula injection in Excel (C-5 fix)
+  const DANGEROUS_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+
   const rows = data.map((row) =>
     headers
       .map((header) => {
         const value = row[header];
+        let stringVal = value === null || value === undefined ? '' : String(value);
+        // Prevent CSV injection — prefix dangerous chars with single quote
+        if (stringVal.length > 0 && DANGEROUS_PREFIXES.includes(stringVal[0])) {
+          stringVal = `'${stringVal}`;
+        }
         // Escape values containing separator, quotes, or newlines
-        const stringVal = value === null || value === undefined ? '' : String(value);
         if (stringVal.includes(separator) || stringVal.includes('"') || stringVal.includes('\n')) {
           return `"${stringVal.replace(/"/g, '""')}"`;
         }
@@ -176,6 +183,64 @@ export function exportToWord(element, filename = 'export.doc') {
 // ─── JSON Export ──────────────────────────────
 export function exportToJSON(data, filename = 'export.json') {
   const jsonContent = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+  saveAs(blob, filename);
+  return filename;
+}
+
+// ─── XML Export ──────────────────────────────
+export function exportToXML(data, filename = 'export.xml', rootTag = 'records', rowTag = 'record') {
+  if (!data || data.length === 0) throw new Error('No data to export');
+
+  const escapeXml = (str) =>
+    String(str === null || str === undefined ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+  const rows = data
+    .map((row) => {
+      const fields = Object.entries(row)
+        .map(([key, val]) => `    <${key}>${escapeXml(val)}</${key}>`)
+        .join('\n');
+      return `  <${rowTag}>\n${fields}\n  </${rowTag}>`;
+    })
+    .join('\n');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<${rootTag}>\n${rows}\n</${rootTag}>`;
+  const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
+  saveAs(blob, filename);
+  return filename;
+}
+
+// ─── Avro-JSON Export (Avro-compatible JSON with schema) ─────────
+export function exportToAvro(data, filename = 'export.avro.json', schemaName = 'Record') {
+  if (!data || data.length === 0) throw new Error('No data to export');
+
+  // Infer Avro-style schema from first record
+  const sample = data[0];
+  const fields = Object.keys(sample).map((key) => {
+    const val = sample[key];
+    let type = 'string';
+    if (typeof val === 'number') type = Number.isInteger(val) ? 'int' : 'double';
+    else if (typeof val === 'boolean') type = 'boolean';
+    return { name: key, type: ['null', type] };
+  });
+
+  const avroSchema = {
+    type: 'record',
+    name: schemaName,
+    namespace: 'com.databricks.export',
+    fields,
+  };
+
+  const avroPayload = {
+    schema: avroSchema,
+    records: data,
+  };
+
+  const jsonContent = JSON.stringify(avroPayload, null, 2);
   const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
   saveAs(blob, filename);
   return filename;

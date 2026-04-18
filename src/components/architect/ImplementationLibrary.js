@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { exportToCSV } from '../../utils/fileExport';
+import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
 
 /**
  * ImplementationLibrary — renders enterprise implementation tables.
@@ -103,13 +103,38 @@ function ImplementationLibrary({
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Click any row to expand all 11 dimensions
           </span>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => exportToCSV(rows, csvName)}
-            style={{ marginLeft: 'auto' }}
-          >
-            Download CSV
-          </button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {[
+              { fmt: 'csv', fn: () => exportToCSV(rows, csvName), label: 'CSV', icon: '📄' },
+              {
+                fmt: 'json',
+                fn: () => exportToJSON(rows, csvName.replace(/\.\w+$/, '.json')),
+                label: 'JSON',
+                icon: '{ }',
+              },
+              {
+                fmt: 'xml',
+                fn: () => exportToXML(rows, csvName.replace(/\.\w+$/, '.xml'), 'topics', 'topic'),
+                label: 'XML',
+                icon: '< >',
+              },
+              {
+                fmt: 'avro',
+                fn: () => exportToAvro(rows, csvName.replace(/\.\w+$/, '.avro.json'), 'Topic'),
+                label: 'Avro',
+                icon: '🔷',
+              },
+            ].map((b) => (
+              <button
+                key={b.fmt}
+                className="btn btn-secondary btn-sm"
+                onClick={b.fn}
+                title={`Download as ${b.label}`}
+              >
+                {b.icon} {b.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

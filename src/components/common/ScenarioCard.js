@@ -13,7 +13,8 @@
  *   <ScenarioCard scenario={scenario} isExpanded={true} />
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
 
 // Generate sample before/after data based on scenario title/category
 function generateSampleData(scenario) {
@@ -652,6 +653,14 @@ function ScenarioCard({ scenario }) {
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [duration, setDuration] = useState(null);
+  const timeoutRef = useRef(null);
+
+  // H-4 fix: clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const data = generateSampleData(scenario);
   const explanation = generateExplanation(scenario);
@@ -660,7 +669,7 @@ function ScenarioCard({ scenario }) {
   const runProcess = () => {
     setProcessing(true);
     const time = (Math.random() * 3 + 1).toFixed(1);
-    setTimeout(
+    timeoutRef.current = setTimeout(
       () => {
         setProcessed(true);
         setProcessing(false);
@@ -1134,6 +1143,54 @@ function ScenarioCard({ scenario }) {
             {data.target.format} | {data.afterStats.rows.toLocaleString()} rows
           </div>
         </div>
+      </div>
+
+      {/* Download Data Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          flexWrap: 'wrap',
+          marginBottom: '0.75rem',
+          padding: '0.5rem 0.75rem',
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '6px',
+        }}
+      >
+        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+          Download Data:
+        </span>
+        {[
+          { fmt: 'csv', label: 'CSV', icon: '📄' },
+          { fmt: 'json', label: 'JSON', icon: '{ }' },
+          { fmt: 'xml', label: 'XML', icon: '< >' },
+          { fmt: 'avro', label: 'Avro', icon: '🔷' },
+        ].map((b) => (
+          <button
+            key={b.fmt}
+            className="btn btn-secondary btn-sm"
+            onClick={() => {
+              const slug = (scenario.title || 'scenario')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .slice(0, 40);
+              const exportRows = [
+                ...data.before.map((r) => ({ stage: 'before', ...r })),
+                ...(processed ? data.after.map((r) => ({ stage: 'after', ...r })) : []),
+              ];
+              if (b.fmt === 'csv') exportToCSV(exportRows, `${slug}.csv`);
+              else if (b.fmt === 'json') exportToJSON(exportRows, `${slug}.json`);
+              else if (b.fmt === 'xml') exportToXML(exportRows, `${slug}.xml`, 'records', 'record');
+              else if (b.fmt === 'avro')
+                exportToAvro(exportRows, `${slug}.avro.json`, 'ScenarioData');
+            }}
+            title={`Download as ${b.label}`}
+          >
+            {b.icon} {b.label}
+          </button>
+        ))}
       </div>
 
       {/* Before / After Tables */}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { exportToCSV } from '../../utils/fileExport';
+import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
 
 /**
  * ProductionSupportLibrary — renders L1-L4 support playbooks.
@@ -157,13 +157,39 @@ function ProductionSupportLibrary({ pageTitle, pageSubtitle, coverage, levels, c
           <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
             Click any issue to see full triage + resolution
           </span>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => exportToCSV(allRows, csvName)}
-            style={{ marginLeft: 'auto' }}
-          >
-            Download CSV
-          </button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {[
+              { fmt: 'csv', fn: () => exportToCSV(allRows, csvName), label: 'CSV', icon: '📄' },
+              {
+                fmt: 'json',
+                fn: () => exportToJSON(allRows, csvName.replace(/\.\w+$/, '.json')),
+                label: 'JSON',
+                icon: '{ }',
+              },
+              {
+                fmt: 'xml',
+                fn: () =>
+                  exportToXML(allRows, csvName.replace(/\.\w+$/, '.xml'), 'issues', 'issue'),
+                label: 'XML',
+                icon: '< >',
+              },
+              {
+                fmt: 'avro',
+                fn: () => exportToAvro(allRows, csvName.replace(/\.\w+$/, '.avro.json'), 'Issue'),
+                label: 'Avro',
+                icon: '🔷',
+              },
+            ].map((b) => (
+              <button
+                key={b.fmt}
+                className="btn btn-secondary btn-sm"
+                onClick={b.fn}
+                title={`Download as ${b.label}`}
+              >
+                {b.icon} {b.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

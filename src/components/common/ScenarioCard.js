@@ -194,6 +194,1246 @@ function generateSampleData(scenario) {
     };
   }
 
+  // ── Streaming / Kafka / Event ──────────────────────────────────────
+  if (
+    title.includes('stream') ||
+    title.includes('kafka') ||
+    title.includes('event') ||
+    cat.includes('stream')
+  ) {
+    return {
+      source: { path: 'kafka://events-topic', format: 'Kafka JSON' },
+      target: { path: 'catalog.bronze.events', format: 'Delta (streaming)' },
+      before: [
+        {
+          offset: 1001,
+          key: 'user_123',
+          event_type: 'click',
+          page: '/home',
+          event_ts: '2024-01-15T12:00:00Z',
+          partition: 0,
+        },
+        {
+          offset: 1002,
+          key: 'user_456',
+          event_type: 'purchase',
+          page: '/cart',
+          event_ts: '2024-01-15T12:01:00Z',
+          partition: 1,
+        },
+        {
+          offset: 1003,
+          key: null,
+          event_type: 'view',
+          page: '/products',
+          event_ts: '2024-01-15T12:01:30Z',
+          partition: 0,
+        },
+        {
+          offset: 1004,
+          key: 'user_123',
+          event_type: 'click',
+          page: '/home',
+          event_ts: '2024-01-15T12:00:00Z',
+          partition: 0,
+        },
+      ],
+      after: [
+        {
+          user_id: 'user_123',
+          event_type: 'click',
+          page: '/home',
+          event_ts: '2024-01-15T12:00:00Z',
+          _ingested_ts: '2024-01-15T12:00:05Z',
+          _batch_id: 'b-001',
+        },
+        {
+          user_id: 'user_456',
+          event_type: 'purchase',
+          page: '/cart',
+          event_ts: '2024-01-15T12:01:00Z',
+          _ingested_ts: '2024-01-15T12:01:03Z',
+          _batch_id: 'b-001',
+        },
+        {
+          user_id: 'UNKNOWN',
+          event_type: 'view',
+          page: '/products',
+          event_ts: '2024-01-15T12:01:30Z',
+          _ingested_ts: '2024-01-15T12:01:35Z',
+          _batch_id: 'b-001',
+        },
+      ],
+      beforeStats: { rows: 500000, nulls: 1200, dupes: 8500 },
+      afterStats: { rows: 491500, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── CDC / Change Data Capture ──────────────────────────────────────
+  if (title.includes('cdc') || title.includes('change data') || title.includes('debezium')) {
+    return {
+      source: { path: 'mysql://erp_db/orders (CDC)', format: 'Debezium JSON' },
+      target: { path: 'catalog.bronze.orders_cdc', format: 'Delta' },
+      before: [
+        {
+          op: 'c',
+          order_id: 5001,
+          customer_id: 'C100',
+          amount: 250.0,
+          status: 'NEW',
+          ts_ms: 1705334400000,
+        },
+        {
+          op: 'u',
+          order_id: 5001,
+          customer_id: 'C100',
+          amount: 250.0,
+          status: 'SHIPPED',
+          ts_ms: 1705420800000,
+        },
+        {
+          op: 'c',
+          order_id: 5002,
+          customer_id: 'C101',
+          amount: 89.99,
+          status: 'NEW',
+          ts_ms: 1705334460000,
+        },
+        {
+          op: 'd',
+          order_id: 4999,
+          customer_id: 'C099',
+          amount: 150.0,
+          status: 'CANCELLED',
+          ts_ms: 1705507200000,
+        },
+      ],
+      after: [
+        {
+          order_id: 5001,
+          customer_id: 'C100',
+          amount: 250.0,
+          status: 'SHIPPED',
+          _cdc_op: 'UPDATE',
+          _cdc_ts: '2024-01-16',
+          is_current: true,
+        },
+        {
+          order_id: 5002,
+          customer_id: 'C101',
+          amount: 89.99,
+          status: 'NEW',
+          _cdc_op: 'INSERT',
+          _cdc_ts: '2024-01-15',
+          is_current: true,
+        },
+        {
+          order_id: 4999,
+          customer_id: 'C099',
+          amount: 150.0,
+          status: 'CANCELLED',
+          _cdc_op: 'DELETE',
+          _cdc_ts: '2024-01-17',
+          is_current: false,
+        },
+      ],
+      beforeStats: { rows: 250000, nulls: 0, dupes: 45000 },
+      afterStats: { rows: 205000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── SCD / Slowly Changing Dimension ────────────────────────────────
+  if (
+    title.includes('scd') ||
+    title.includes('slowly changing') ||
+    title.includes('history') ||
+    title.includes('dimension')
+  ) {
+    return {
+      source: { path: 'catalog.silver.customers', format: 'Delta' },
+      target: { path: 'catalog.gold.dim_customer', format: 'Delta (SCD2)' },
+      before: [
+        {
+          customer_id: 101,
+          name: 'Alice Johnson',
+          email: 'alice@old.com',
+          city: 'New York',
+          tier: 'Silver',
+        },
+        {
+          customer_id: 101,
+          name: 'Alice Johnson',
+          email: 'alice@new.com',
+          city: 'San Francisco',
+          tier: 'Gold',
+        },
+        {
+          customer_id: 102,
+          name: 'Bob Smith',
+          email: 'bob@test.com',
+          city: 'Chicago',
+          tier: 'Silver',
+        },
+        {
+          customer_id: 103,
+          name: 'New Customer',
+          email: 'new@test.com',
+          city: 'Austin',
+          tier: 'Bronze',
+        },
+      ],
+      after: [
+        {
+          customer_id: 101,
+          name: 'Alice Johnson',
+          email: 'alice@old.com',
+          city: 'New York',
+          tier: 'Silver',
+          is_current: false,
+          valid_from: '2023-01-01',
+          valid_to: '2024-01-15',
+        },
+        {
+          customer_id: 101,
+          name: 'Alice Johnson',
+          email: 'alice@new.com',
+          city: 'San Francisco',
+          tier: 'Gold',
+          is_current: true,
+          valid_from: '2024-01-15',
+          valid_to: '9999-12-31',
+        },
+        {
+          customer_id: 102,
+          name: 'Bob Smith',
+          email: 'bob@test.com',
+          city: 'Chicago',
+          tier: 'Silver',
+          is_current: true,
+          valid_from: '2023-06-01',
+          valid_to: '9999-12-31',
+        },
+        {
+          customer_id: 103,
+          name: 'New Customer',
+          email: 'new@test.com',
+          city: 'Austin',
+          tier: 'Bronze',
+          is_current: true,
+          valid_from: '2024-01-16',
+          valid_to: '9999-12-31',
+        },
+      ],
+      beforeStats: { rows: 75000, nulls: 120, dupes: 3200 },
+      afterStats: { rows: 82000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── PII / Masking / Security ───────────────────────────────────────
+  if (
+    title.includes('pii') ||
+    title.includes('mask') ||
+    title.includes('encrypt') ||
+    title.includes('sensitive') ||
+    cat.includes('security') ||
+    cat.includes('pii')
+  ) {
+    return {
+      source: { path: 'catalog.bronze.customers_raw', format: 'Delta' },
+      target: { path: 'catalog.silver.customers_masked', format: 'Delta (masked)' },
+      before: [
+        {
+          customer_id: 'C001',
+          name: 'Alice Johnson',
+          ssn: '123-45-6789',
+          email: 'alice@company.com',
+          phone: '+1-555-0101',
+          dob: '1990-03-15',
+          salary: 95000,
+        },
+        {
+          customer_id: 'C002',
+          name: 'Bob Smith',
+          ssn: '987-65-4321',
+          email: 'bob@company.com',
+          phone: '+1-555-0202',
+          dob: '1985-07-22',
+          salary: 120000,
+        },
+        {
+          customer_id: 'C003',
+          name: 'Charlie Brown',
+          ssn: '456-78-9012',
+          email: 'charlie@company.com',
+          phone: '+1-555-0303',
+          dob: '1992-11-08',
+          salary: 87000,
+        },
+      ],
+      after: [
+        {
+          customer_id: 'C001',
+          name: 'A*** J******',
+          ssn: '***-**-6789',
+          email: 'a****@company.com',
+          phone: '***-***-0101',
+          dob: '****-**-15',
+          salary: null,
+        },
+        {
+          customer_id: 'C002',
+          name: 'B** S****',
+          ssn: '***-**-4321',
+          email: 'b**@company.com',
+          phone: '***-***-0202',
+          dob: '****-**-22',
+          salary: null,
+        },
+        {
+          customer_id: 'C003',
+          name: 'C****** B****',
+          ssn: '***-**-9012',
+          email: 'c******@company.com',
+          phone: '***-***-0303',
+          dob: '****-**-08',
+          salary: null,
+        },
+      ],
+      beforeStats: { rows: 200000, nulls: 0, dupes: 0 },
+      afterStats: { rows: 200000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── MERGE / Upsert ─────────────────────────────────────────────────
+  if (title.includes('merge') || title.includes('upsert') || title.includes('dedup')) {
+    return {
+      source: { path: 'catalog.bronze.products_daily', format: 'Delta' },
+      target: { path: 'catalog.silver.products', format: 'Delta (merged)' },
+      before: [
+        { product_id: 'P100', name: 'Widget A', price: 29.99, stock: 500, updated: '2024-01-14' },
+        { product_id: 'P101', name: 'Widget B', price: 49.99, stock: 200, updated: '2024-01-14' },
+        { product_id: 'P100', name: 'Widget A', price: 31.99, stock: 480, updated: '2024-01-15' },
+        { product_id: 'P102', name: 'Widget C', price: 19.99, stock: 1000, updated: '2024-01-15' },
+      ],
+      after: [
+        {
+          product_id: 'P100',
+          name: 'Widget A',
+          price: 31.99,
+          stock: 480,
+          updated: '2024-01-15',
+          _merged_ts: '2024-01-15T06:00:00Z',
+        },
+        {
+          product_id: 'P101',
+          name: 'Widget B',
+          price: 49.99,
+          stock: 200,
+          updated: '2024-01-14',
+          _merged_ts: '2024-01-14T06:00:00Z',
+        },
+        {
+          product_id: 'P102',
+          name: 'Widget C',
+          price: 19.99,
+          stock: 1000,
+          updated: '2024-01-15',
+          _merged_ts: '2024-01-15T06:00:00Z',
+        },
+      ],
+      beforeStats: { rows: 80000, nulls: 0, dupes: 15000 },
+      afterStats: { rows: 65000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Bronze / Ingestion / File / CSV / Batch ────────────────────────
+  if (
+    title.includes('bronze') ||
+    title.includes('ingestion') ||
+    title.includes('csv') ||
+    title.includes('file') ||
+    title.includes('batch') ||
+    cat.includes('bronze') ||
+    cat.includes('ingestion')
+  ) {
+    return {
+      source: { path: '/mnt/landing/sales/2024-01-15/', format: 'CSV / Parquet' },
+      target: { path: 'catalog.bronze.sales_raw', format: 'Delta' },
+      before: [
+        {
+          file_name: 'sales_20240115.csv',
+          sale_id: 'S001',
+          product: 'Laptop',
+          qty: 2,
+          price: 999.99,
+          region: 'US-East',
+          sale_date: '2024-01-15',
+        },
+        {
+          file_name: 'sales_20240115.csv',
+          sale_id: 'S002',
+          product: 'Mouse',
+          qty: 10,
+          price: 25.5,
+          region: 'US-West',
+          sale_date: '2024-01-15',
+        },
+        {
+          file_name: 'sales_20240115.csv',
+          sale_id: 'S001',
+          product: 'Laptop',
+          qty: 2,
+          price: 999.99,
+          region: 'US-East',
+          sale_date: '2024-01-15',
+        },
+        {
+          file_name: 'sales_20240115.csv',
+          sale_id: 'S003',
+          product: null,
+          qty: -1,
+          price: 0,
+          region: '',
+          sale_date: 'INVALID',
+        },
+      ],
+      after: [
+        {
+          sale_id: 'S001',
+          product: 'Laptop',
+          qty: 2,
+          price: 999.99,
+          region: 'US-East',
+          sale_date: '2024-01-15',
+          _file: 'sales_20240115.csv',
+          _ingested: '2024-01-15T06:30:00Z',
+        },
+        {
+          sale_id: 'S002',
+          product: 'Mouse',
+          qty: 10,
+          price: 25.5,
+          region: 'US-West',
+          sale_date: '2024-01-15',
+          _file: 'sales_20240115.csv',
+          _ingested: '2024-01-15T06:30:00Z',
+        },
+      ],
+      beforeStats: { rows: 150000, nulls: 4500, dupes: 12000 },
+      afterStats: { rows: 133500, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Silver / Clean / Validate / Quality ────────────────────────────
+  if (
+    title.includes('silver') ||
+    title.includes('clean') ||
+    title.includes('valid') ||
+    title.includes('quality') ||
+    cat.includes('silver') ||
+    cat.includes('quality')
+  ) {
+    return {
+      source: { path: 'catalog.bronze.transactions', format: 'Delta' },
+      target: { path: 'catalog.silver.transactions_clean', format: 'Delta (validated)' },
+      before: [
+        {
+          txn_id: 'T001',
+          account_id: 'A100',
+          amount: 5000.0,
+          currency: 'USD',
+          txn_type: 'DEBIT',
+          txn_date: '2024-01-15',
+          channel: 'WEB',
+        },
+        {
+          txn_id: 'T002',
+          account_id: 'A101',
+          amount: -100.0,
+          currency: 'usd',
+          txn_type: null,
+          txn_date: 'bad',
+          channel: '',
+        },
+        {
+          txn_id: 'T001',
+          account_id: 'A100',
+          amount: 5000.0,
+          currency: 'USD',
+          txn_type: 'DEBIT',
+          txn_date: '2024-01-15',
+          channel: 'WEB',
+        },
+        {
+          txn_id: 'T003',
+          account_id: null,
+          amount: 250.0,
+          currency: 'EUR',
+          txn_type: 'CREDIT',
+          txn_date: '2024-01-16',
+          channel: 'ATM',
+        },
+      ],
+      after: [
+        {
+          txn_id: 'T001',
+          account_id: 'A100',
+          amount: 5000.0,
+          currency: 'USD',
+          txn_type: 'DEBIT',
+          txn_date: '2024-01-15',
+          channel: 'WEB',
+          _dq_status: 'PASS',
+        },
+        {
+          txn_id: 'T003',
+          account_id: 'UNKNOWN',
+          amount: 250.0,
+          currency: 'EUR',
+          txn_type: 'CREDIT',
+          txn_date: '2024-01-16',
+          channel: 'ATM',
+          _dq_status: 'WARN',
+        },
+      ],
+      beforeStats: { rows: 500000, nulls: 8500, dupes: 22000 },
+      afterStats: { rows: 469500, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Gold / Aggregate / KPI / Mart / Star ───────────────────────────
+  if (
+    title.includes('gold') ||
+    title.includes('aggregate') ||
+    title.includes('kpi') ||
+    title.includes('mart') ||
+    title.includes('star') ||
+    cat.includes('gold')
+  ) {
+    return {
+      source: { path: 'catalog.silver.transactions + dim_customer + dim_product', format: 'Delta' },
+      target: { path: 'catalog.gold.sales_summary_daily', format: 'Delta (Gold mart)' },
+      before: [
+        {
+          date: '2024-01-15',
+          region: 'US-East',
+          product_category: 'Electronics',
+          txn_count: 1250,
+          total_revenue: 985000.5,
+          avg_order: 788.0,
+        },
+        {
+          date: '2024-01-15',
+          region: 'US-West',
+          product_category: 'Electronics',
+          txn_count: 890,
+          total_revenue: 672000.0,
+          avg_order: 755.0,
+        },
+        {
+          date: '2024-01-15',
+          region: 'EU-Central',
+          product_category: 'Clothing',
+          txn_count: 2100,
+          total_revenue: 315000.0,
+          avg_order: 150.0,
+        },
+        {
+          date: '2024-01-14',
+          region: 'US-East',
+          product_category: 'Electronics',
+          txn_count: 1100,
+          total_revenue: 867000.0,
+          avg_order: 788.18,
+        },
+      ],
+      after: [
+        {
+          date: '2024-01-15',
+          region: 'US-East',
+          product_category: 'Electronics',
+          txn_count: 1250,
+          total_revenue: 985000.5,
+          avg_order: 788.0,
+          yoy_growth: 12.5,
+          rank: 1,
+        },
+        {
+          date: '2024-01-15',
+          region: 'US-West',
+          product_category: 'Electronics',
+          txn_count: 890,
+          total_revenue: 672000.0,
+          avg_order: 755.0,
+          yoy_growth: 8.2,
+          rank: 2,
+        },
+        {
+          date: '2024-01-15',
+          region: 'EU-Central',
+          product_category: 'Clothing',
+          txn_count: 2100,
+          total_revenue: 315000.0,
+          avg_order: 150.0,
+          yoy_growth: -3.1,
+          rank: 3,
+        },
+      ],
+      beforeStats: { rows: 1200000, nulls: 0, dupes: 0 },
+      afterStats: { rows: 45000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Governance / Lineage / Catalog / Policy ────────────────────────
+  if (
+    title.includes('governance') ||
+    title.includes('lineage') ||
+    title.includes('catalog') ||
+    title.includes('policy') ||
+    title.includes('rbac') ||
+    cat.includes('governance')
+  ) {
+    return {
+      source: {
+        path: 'system.access.audit + system.access.table_lineage',
+        format: 'System tables',
+      },
+      target: { path: 'catalog.gold.governance_dashboard', format: 'Delta' },
+      before: [
+        {
+          table_name: 'catalog.silver.customers',
+          owner: null,
+          classification: null,
+          last_access: '2024-01-15',
+          access_count: 450,
+          has_pii: true,
+        },
+        {
+          table_name: 'catalog.gold.revenue_daily',
+          owner: 'finance_team',
+          classification: 'CONFIDENTIAL',
+          last_access: '2024-01-15',
+          access_count: 1200,
+          has_pii: false,
+        },
+        {
+          table_name: 'catalog.bronze.raw_logs',
+          owner: null,
+          classification: null,
+          last_access: '2023-06-01',
+          access_count: 2,
+          has_pii: true,
+        },
+        {
+          table_name: 'catalog.silver.products',
+          owner: 'product_team',
+          classification: 'PUBLIC',
+          last_access: '2024-01-14',
+          access_count: 800,
+          has_pii: false,
+        },
+      ],
+      after: [
+        {
+          table_name: 'catalog.silver.customers',
+          owner: 'crm_team',
+          classification: 'PII',
+          last_access: '2024-01-15',
+          access_count: 450,
+          has_pii: true,
+          policy: 'MASK_SSN+EMAIL',
+          compliance: 'GDPR',
+        },
+        {
+          table_name: 'catalog.gold.revenue_daily',
+          owner: 'finance_team',
+          classification: 'CONFIDENTIAL',
+          last_access: '2024-01-15',
+          access_count: 1200,
+          has_pii: false,
+          policy: 'RLS_BY_REGION',
+          compliance: 'SOX',
+        },
+        {
+          table_name: 'catalog.bronze.raw_logs',
+          owner: 'platform_team',
+          classification: 'PII',
+          last_access: '2023-06-01',
+          access_count: 2,
+          has_pii: true,
+          policy: 'ARCHIVE_180D',
+          compliance: 'GDPR',
+        },
+      ],
+      beforeStats: { rows: 5000, nulls: 1800, dupes: 0 },
+      afterStats: { rows: 5000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── ELT / ETL / Transform ──────────────────────────────────────────
+  if (
+    title.includes('elt') ||
+    title.includes('etl') ||
+    title.includes('transform') ||
+    cat.includes('elt') ||
+    cat.includes('etl')
+  ) {
+    return {
+      source: { path: 'catalog.bronze.raw_invoices', format: 'Delta' },
+      target: { path: 'catalog.silver.invoices_enriched', format: 'Delta' },
+      before: [
+        {
+          invoice_id: 'INV-001',
+          customer_id: 'C100',
+          line_items: 3,
+          subtotal: 450.0,
+          tax_rate: null,
+          currency: 'usd',
+          invoice_date: '01/15/2024',
+        },
+        {
+          invoice_id: 'INV-002',
+          customer_id: 'C101',
+          line_items: 1,
+          subtotal: 1200.0,
+          tax_rate: 0.08,
+          currency: 'USD',
+          invoice_date: '2024-01-16',
+        },
+        {
+          invoice_id: 'INV-001',
+          customer_id: 'C100',
+          line_items: 3,
+          subtotal: 450.0,
+          tax_rate: null,
+          currency: 'usd',
+          invoice_date: '01/15/2024',
+        },
+        {
+          invoice_id: 'INV-003',
+          customer_id: null,
+          line_items: 0,
+          subtotal: -50.0,
+          tax_rate: 0.1,
+          currency: 'EUR',
+          invoice_date: 'INVALID',
+        },
+      ],
+      after: [
+        {
+          invoice_id: 'INV-001',
+          customer_id: 'C100',
+          customer_name: 'Acme Corp',
+          line_items: 3,
+          subtotal: 450.0,
+          tax: 36.0,
+          total: 486.0,
+          currency: 'USD',
+          invoice_date: '2024-01-15',
+        },
+        {
+          invoice_id: 'INV-002',
+          customer_id: 'C101',
+          customer_name: 'Beta LLC',
+          line_items: 1,
+          subtotal: 1200.0,
+          tax: 96.0,
+          total: 1296.0,
+          currency: 'USD',
+          invoice_date: '2024-01-16',
+        },
+      ],
+      beforeStats: { rows: 300000, nulls: 15000, dupes: 28000 },
+      afterStats: { rows: 257000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Visualization / Dashboard / BI / Report ────────────────────────
+  if (
+    title.includes('visual') ||
+    title.includes('dashboard') ||
+    title.includes('bi') ||
+    title.includes('report') ||
+    title.includes('chart') ||
+    cat.includes('visual')
+  ) {
+    return {
+      source: { path: 'catalog.gold.sales_summary', format: 'Delta / SQL Warehouse' },
+      target: { path: 'Power BI / Tableau Dashboard', format: 'Semantic model' },
+      before: [
+        {
+          metric: 'Total Revenue',
+          region: 'US-East',
+          current_month: 2850000,
+          prev_month: 2650000,
+          yoy_growth: 12.5,
+          target: 3000000,
+        },
+        {
+          metric: 'Total Revenue',
+          region: 'US-West',
+          current_month: 1920000,
+          prev_month: 1800000,
+          yoy_growth: 8.2,
+          target: 2000000,
+        },
+        {
+          metric: 'Active Customers',
+          region: 'US-East',
+          current_month: 45000,
+          prev_month: 42000,
+          yoy_growth: 7.1,
+          target: 50000,
+        },
+        {
+          metric: 'Churn Rate',
+          region: 'US-East',
+          current_month: 3.2,
+          prev_month: 3.8,
+          yoy_growth: -15.8,
+          target: 2.5,
+        },
+      ],
+      after: [
+        {
+          metric: 'Total Revenue',
+          region: 'US-East',
+          value: 2850000,
+          trend: 'UP',
+          vs_target: '95%',
+          alert: 'ON_TRACK',
+          display: '$2.85M',
+        },
+        {
+          metric: 'Total Revenue',
+          region: 'US-West',
+          value: 1920000,
+          trend: 'UP',
+          vs_target: '96%',
+          alert: 'ON_TRACK',
+          display: '$1.92M',
+        },
+        {
+          metric: 'Active Customers',
+          region: 'US-East',
+          value: 45000,
+          trend: 'UP',
+          vs_target: '90%',
+          alert: 'WATCH',
+          display: '45K',
+        },
+        {
+          metric: 'Churn Rate',
+          region: 'US-East',
+          value: 3.2,
+          trend: 'DOWN',
+          vs_target: '128%',
+          alert: 'AT_RISK',
+          display: '3.2%',
+        },
+      ],
+      beforeStats: { rows: 500, nulls: 0, dupes: 0 },
+      afterStats: { rows: 500, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── XAI / Fairness / Explainability ────────────────────────────────
+  if (
+    title.includes('xai') ||
+    title.includes('explain') ||
+    title.includes('shap') ||
+    title.includes('fairness') ||
+    title.includes('bias') ||
+    cat.includes('xai')
+  ) {
+    return {
+      source: { path: 'catalog.gold.predictions + shap_values', format: 'Delta' },
+      target: { path: 'catalog.gold.model_explanations', format: 'Delta' },
+      before: [
+        {
+          customer_id: 'C001',
+          prediction: 0.87,
+          label: 'HIGH_RISK',
+          feature_income: 45000,
+          feature_age: 28,
+          feature_tenure: 2,
+          feature_region: 'US-East',
+        },
+        {
+          customer_id: 'C002',
+          prediction: 0.12,
+          label: 'LOW_RISK',
+          feature_income: 120000,
+          feature_age: 45,
+          feature_tenure: 12,
+          feature_region: 'US-West',
+        },
+        {
+          customer_id: 'C003',
+          prediction: 0.65,
+          label: 'MEDIUM_RISK',
+          feature_income: 72000,
+          feature_age: 35,
+          feature_tenure: 5,
+          feature_region: 'EU-Central',
+        },
+      ],
+      after: [
+        {
+          customer_id: 'C001',
+          prediction: 0.87,
+          top_1_feature: 'income',
+          top_1_shap: -0.35,
+          top_2_feature: 'tenure',
+          top_2_shap: -0.22,
+          top_3_feature: 'age',
+          top_3_shap: -0.15,
+          explanation: 'Low income + short tenure drives high risk',
+        },
+        {
+          customer_id: 'C002',
+          prediction: 0.12,
+          top_1_feature: 'income',
+          top_1_shap: 0.4,
+          top_2_feature: 'tenure',
+          top_2_shap: 0.28,
+          top_3_feature: 'age',
+          top_3_shap: 0.05,
+          explanation: 'High income + long tenure reduces risk',
+        },
+        {
+          customer_id: 'C003',
+          prediction: 0.65,
+          top_1_feature: 'tenure',
+          top_1_shap: -0.18,
+          top_2_feature: 'region',
+          top_2_shap: -0.12,
+          top_3_feature: 'income',
+          top_3_shap: 0.08,
+          explanation: 'Medium tenure + EU region drives moderate risk',
+        },
+      ],
+      beforeStats: { rows: 50000, nulls: 0, dupes: 0 },
+      afterStats: { rows: 50000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── RAG / Embedding / Vector / LLM ─────────────────────────────────
+  if (
+    title.includes('rag') ||
+    title.includes('embed') ||
+    title.includes('vector') ||
+    title.includes('llm') ||
+    title.includes('retriev') ||
+    cat.includes('rag')
+  ) {
+    return {
+      source: { path: 'catalog.bronze.documents', format: 'PDF / Markdown' },
+      target: { path: 'catalog.gold.document_embeddings', format: 'Delta + Vector Index' },
+      before: [
+        {
+          doc_id: 'DOC-001',
+          title: 'Employee Handbook v3.2',
+          chunk_id: 1,
+          chunk_text: 'All employees are entitled to 20 days paid leave per year...',
+          source: 'HR/policies',
+          last_modified: '2024-01-10',
+        },
+        {
+          doc_id: 'DOC-001',
+          title: 'Employee Handbook v3.2',
+          chunk_id: 2,
+          chunk_text: 'Remote work is permitted with manager approval for up to 3 days per week...',
+          source: 'HR/policies',
+          last_modified: '2024-01-10',
+        },
+        {
+          doc_id: 'DOC-002',
+          title: 'Security Policy 2024',
+          chunk_id: 1,
+          chunk_text: 'All access to production systems requires MFA and VPN connection...',
+          source: 'IT/security',
+          last_modified: '2024-01-05',
+        },
+      ],
+      after: [
+        {
+          doc_id: 'DOC-001',
+          chunk_id: 1,
+          embedding_dim: 768,
+          model: 'bge-large-en-v1.5',
+          token_count: 42,
+          metadata_source: 'HR/policies',
+          indexed_at: '2024-01-15T08:00:00Z',
+        },
+        {
+          doc_id: 'DOC-001',
+          chunk_id: 2,
+          embedding_dim: 768,
+          model: 'bge-large-en-v1.5',
+          token_count: 38,
+          metadata_source: 'HR/policies',
+          indexed_at: '2024-01-15T08:00:01Z',
+        },
+        {
+          doc_id: 'DOC-002',
+          chunk_id: 1,
+          embedding_dim: 768,
+          model: 'bge-large-en-v1.5',
+          token_count: 35,
+          metadata_source: 'IT/security',
+          indexed_at: '2024-01-15T08:00:02Z',
+        },
+      ],
+      beforeStats: { rows: 15000, nulls: 0, dupes: 0 },
+      afterStats: { rows: 15000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Terraform / Infrastructure / Cloud / Pipeline Config ───────────
+  if (
+    title.includes('terraform') ||
+    title.includes('infra') ||
+    title.includes('cloud') ||
+    title.includes('azure') ||
+    title.includes('aws') ||
+    cat.includes('terraform')
+  ) {
+    return {
+      source: { path: 'terraform/modules/databricks', format: 'HCL / Terraform' },
+      target: { path: 'Azure / AWS / GCP resources', format: 'Cloud resources' },
+      before: [
+        {
+          resource: 'databricks_cluster',
+          name: 'analytics-cluster',
+          node_type: 'Standard_DS3_v2',
+          min_workers: 2,
+          max_workers: 8,
+          auto_terminate: 30,
+          state: 'RUNNING',
+        },
+        {
+          resource: 'databricks_sql_endpoint',
+          name: 'bi-warehouse',
+          size: 'Medium',
+          min_clusters: 1,
+          max_clusters: 4,
+          auto_stop: 15,
+          state: 'RUNNING',
+        },
+        {
+          resource: 'azurerm_storage_account',
+          name: 'datalakeprod',
+          tier: 'Standard',
+          replication: 'LRS',
+          access_tier: 'Hot',
+          state: 'ACTIVE',
+        },
+        {
+          resource: 'databricks_cluster_policy',
+          name: 'cost-control',
+          max_dbu: 100,
+          spot_enabled: true,
+          auto_terminate_max: 60,
+          state: 'ACTIVE',
+        },
+      ],
+      after: [
+        {
+          resource: 'databricks_cluster',
+          name: 'analytics-cluster',
+          status: 'APPLIED',
+          drift: 'NONE',
+          cost_estimate: '$12.50/hr',
+          compliance: 'PASS',
+        },
+        {
+          resource: 'databricks_sql_endpoint',
+          name: 'bi-warehouse',
+          status: 'APPLIED',
+          drift: 'NONE',
+          cost_estimate: '$8.00/hr',
+          compliance: 'PASS',
+        },
+        {
+          resource: 'azurerm_storage_account',
+          name: 'datalakeprod',
+          status: 'APPLIED',
+          drift: 'DETECTED',
+          cost_estimate: '$0.02/GB/mo',
+          compliance: 'WARN',
+        },
+      ],
+      beforeStats: { rows: 45, nulls: 0, dupes: 0 },
+      afterStats: { rows: 45, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Testing / DQ / Reconciliation ──────────────────────────────────
+  if (
+    title.includes('test') ||
+    title.includes('reconcil') ||
+    title.includes('dq') ||
+    title.includes('expect') ||
+    cat.includes('test')
+  ) {
+    return {
+      source: { path: 'catalog.silver.orders + catalog.bronze.orders', format: 'Delta' },
+      target: { path: 'catalog.gold.dq_report', format: 'Delta' },
+      before: [
+        {
+          check: 'Row Count Match',
+          source_table: 'bronze.orders',
+          target_table: 'silver.orders',
+          source_count: 150000,
+          target_count: 147500,
+          diff: 2500,
+          threshold: '2%',
+          status: 'FAIL',
+        },
+        {
+          check: 'Null Check',
+          table: 'silver.orders',
+          column: 'customer_id',
+          null_count: 350,
+          null_pct: '0.24%',
+          threshold: '0.5%',
+          status: 'PASS',
+        },
+        {
+          check: 'Unique Check',
+          table: 'silver.orders',
+          column: 'order_id',
+          dup_count: 0,
+          dup_pct: '0%',
+          threshold: '0%',
+          status: 'PASS',
+        },
+        {
+          check: 'Range Check',
+          table: 'silver.orders',
+          column: 'amount',
+          out_of_range: 12,
+          range: '0-100000',
+          threshold: '0.01%',
+          status: 'WARN',
+        },
+      ],
+      after: [
+        {
+          check: 'Row Count Match',
+          status: 'INVESTIGATED',
+          resolution: 'Missing data from source retry — reprocessed',
+          final_status: 'PASS',
+        },
+        {
+          check: 'Null Check',
+          status: 'PASS',
+          resolution: 'Within threshold',
+          final_status: 'PASS',
+        },
+        {
+          check: 'Unique Check',
+          status: 'PASS',
+          resolution: 'No duplicates',
+          final_status: 'PASS',
+        },
+        {
+          check: 'Range Check',
+          status: 'WARN',
+          resolution: '12 negative refunds — valid business case',
+          final_status: 'ACCEPTED',
+        },
+      ],
+      beforeStats: { rows: 150000, nulls: 350, dupes: 0 },
+      afterStats: { rows: 150000, nulls: 0, dupes: 0 },
+    };
+  }
+
+  // ── Unity Catalog / Access / RBAC / RLS / Masking ──────────────────
+  if (
+    title.includes('unity') ||
+    title.includes('catalog') ||
+    title.includes('rbac') ||
+    title.includes('rls') ||
+    title.includes('access control') ||
+    cat.includes('unity')
+  ) {
+    return {
+      source: { path: 'system.information_schema + system.access', format: 'System tables' },
+      target: { path: 'catalog.gold.access_audit', format: 'Delta' },
+      before: [
+        {
+          principal: 'analyst_group',
+          catalog: 'prod',
+          schema: 'silver',
+          table: 'customers',
+          privilege: 'SELECT',
+          granted_by: 'admin',
+          grant_date: '2024-01-01',
+        },
+        {
+          principal: 'data_eng_group',
+          catalog: 'prod',
+          schema: 'bronze',
+          table: '*',
+          privilege: 'ALL PRIVILEGES',
+          granted_by: 'admin',
+          grant_date: '2024-01-01',
+        },
+        {
+          principal: 'bi_group',
+          catalog: 'prod',
+          schema: 'gold',
+          table: 'sales_daily',
+          privilege: 'SELECT',
+          granted_by: 'admin',
+          grant_date: '2024-01-10',
+        },
+        {
+          principal: 'external_partner',
+          catalog: 'shared',
+          schema: 'partner',
+          table: 'orders_summary',
+          privilege: 'SELECT',
+          granted_by: 'admin',
+          grant_date: '2024-01-15',
+        },
+      ],
+      after: [
+        {
+          principal: 'analyst_group',
+          access_level: 'READ',
+          tables_accessible: 12,
+          has_pii_access: false,
+          rls_applied: true,
+          cls_applied: true,
+          last_query: '2024-01-15',
+        },
+        {
+          principal: 'data_eng_group',
+          access_level: 'ADMIN',
+          tables_accessible: 85,
+          has_pii_access: true,
+          rls_applied: false,
+          cls_applied: false,
+          last_query: '2024-01-15',
+        },
+        {
+          principal: 'bi_group',
+          access_level: 'READ',
+          tables_accessible: 8,
+          has_pii_access: false,
+          rls_applied: true,
+          cls_applied: true,
+          last_query: '2024-01-15',
+        },
+      ],
+      beforeStats: { rows: 500, nulls: 0, dupes: 0 },
+      afterStats: { rows: 500, nulls: 0, dupes: 0 },
+    };
+  }
+
   // Default generic
   return {
     source: { path: '/mnt/landing/data', format: 'CSV/JSON' },

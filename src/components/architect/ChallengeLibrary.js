@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
+import {
+  exportToCSV,
+  exportToJSON,
+  exportToXML,
+  exportToAvro,
+  exportToText,
+  exportToParquet,
+} from '../../utils/fileExport';
 import DeepDetailView from './DeepDetailView';
 
 /**
@@ -47,17 +54,23 @@ function ChallengeLibrary({
 
   const downloadAs = (format) => {
     switch (format) {
+      case 'text':
+        exportToText(exportData, `${baseName}.txt`);
+        break;
       case 'csv':
         exportToCSV(exportData, `${baseName}.csv`);
+        break;
+      case 'parquet':
+        exportToParquet(exportData, `${baseName}.parquet.json`, 'Challenge');
         break;
       case 'json':
         exportToJSON(exportData, `${baseName}.json`);
         break;
-      case 'xml':
-        exportToXML(exportData, `${baseName}.xml`, 'challenges', 'challenge');
-        break;
       case 'avro':
         exportToAvro(exportData, `${baseName}.avro.json`, 'Challenge');
+        break;
+      case 'xml':
+        exportToXML(exportData, `${baseName}.xml`, 'challenges', 'challenge');
         break;
       default:
         break;
@@ -122,10 +135,12 @@ function ChallengeLibrary({
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             {[
+              { fmt: 'text', label: 'Text', icon: '📝' },
               { fmt: 'csv', label: 'CSV', icon: '📄' },
+              { fmt: 'parquet', label: 'Parquet', icon: '🧱' },
               { fmt: 'json', label: 'JSON', icon: '{ }' },
-              { fmt: 'xml', label: 'XML', icon: '< >' },
               { fmt: 'avro', label: 'Avro', icon: '🔷' },
+              { fmt: 'xml', label: 'XML', icon: '< >' },
             ].map((b) => (
               <button
                 key={b.fmt}

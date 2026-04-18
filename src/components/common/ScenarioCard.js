@@ -14,7 +14,14 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
+import {
+  exportToCSV,
+  exportToJSON,
+  exportToXML,
+  exportToAvro,
+  exportToText,
+  exportToParquet,
+} from '../../utils/fileExport';
 
 // Generate sample before/after data based on scenario title/category
 function generateSampleData(scenario) {
@@ -2403,10 +2410,12 @@ function ScenarioCard({ scenario }) {
           Download Data:
         </span>
         {[
+          { fmt: 'text', label: 'Text', icon: '📝' },
           { fmt: 'csv', label: 'CSV', icon: '📄' },
+          { fmt: 'parquet', label: 'Parquet', icon: '🧱' },
           { fmt: 'json', label: 'JSON', icon: '{ }' },
-          { fmt: 'xml', label: 'XML', icon: '< >' },
           { fmt: 'avro', label: 'Avro', icon: '🔷' },
+          { fmt: 'xml', label: 'XML', icon: '< >' },
         ].map((b) => (
           <button
             key={b.fmt}
@@ -2420,11 +2429,14 @@ function ScenarioCard({ scenario }) {
                 ...data.before.map((r) => ({ stage: 'before', ...r })),
                 ...(processed ? data.after.map((r) => ({ stage: 'after', ...r })) : []),
               ];
-              if (b.fmt === 'csv') exportToCSV(exportRows, `${slug}.csv`);
+              if (b.fmt === 'text') exportToText(exportRows, `${slug}.txt`);
+              else if (b.fmt === 'csv') exportToCSV(exportRows, `${slug}.csv`);
+              else if (b.fmt === 'parquet')
+                exportToParquet(exportRows, `${slug}.parquet.json`, 'ScenarioData');
               else if (b.fmt === 'json') exportToJSON(exportRows, `${slug}.json`);
-              else if (b.fmt === 'xml') exportToXML(exportRows, `${slug}.xml`, 'records', 'record');
               else if (b.fmt === 'avro')
                 exportToAvro(exportRows, `${slug}.avro.json`, 'ScenarioData');
+              else if (b.fmt === 'xml') exportToXML(exportRows, `${slug}.xml`, 'records', 'record');
             }}
             title={`Download as ${b.label}`}
           >

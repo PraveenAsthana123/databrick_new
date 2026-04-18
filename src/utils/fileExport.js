@@ -245,3 +245,65 @@ export function exportToAvro(data, filename = 'export.avro.json', schemaName = '
   saveAs(blob, filename);
   return filename;
 }
+
+// ─── Text Export (pipe-delimited table) ──────
+export function exportToText(data, filename = 'export.txt') {
+  if (!data || data.length === 0) throw new Error('No data to export');
+
+  const headers = Object.keys(data[0]);
+
+  // Calculate column widths
+  const widths = headers.map((h) =>
+    Math.max(
+      h.length,
+      ...data.map((r) => String(r[h] === null || r[h] === undefined ? '' : r[h]).length)
+    )
+  );
+
+  const pad = (val, w) => {
+    const s = String(val === null || val === undefined ? '' : val);
+    return s + ' '.repeat(Math.max(0, w - s.length));
+  };
+
+  const sep = widths.map((w) => '-'.repeat(w)).join('-+-');
+  const headerLine = headers.map((h, i) => pad(h, widths[i])).join(' | ');
+  const rows = data.map((r) => headers.map((h, i) => pad(r[h], widths[i])).join(' | '));
+
+  const text = [headerLine, sep, ...rows].join('\n');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  saveAs(blob, filename);
+  return filename;
+}
+
+// ─── Parquet Export (Parquet-schema JSON — importable by PySpark/pandas) ─
+export function exportToParquet(data, filename = 'export.parquet.json', schemaName = 'Record') {
+  if (!data || data.length === 0) throw new Error('No data to export');
+
+  const sample = data[0];
+  const columns = Object.keys(sample).map((key) => {
+    const val = sample[key];
+    let parquetType = 'BYTE_ARRAY';
+    let logicalType = 'STRING';
+    if (typeof val === 'number') {
+      parquetType = Number.isInteger(val) ? 'INT64' : 'DOUBLE';
+      logicalType = Number.isInteger(val) ? 'INT' : 'DOUBLE';
+    } else if (typeof val === 'boolean') {
+      parquetType = 'BOOLEAN';
+      logicalType = 'BOOLEAN';
+    }
+    return { name: key, type: parquetType, logical_type: logicalType, repetition: 'OPTIONAL' };
+  });
+
+  const parquetPayload = {
+    _format: 'parquet-schema-json',
+    _note: 'Import with: spark.read.json("file.parquet.json").select("data.*") or pd.read_json()',
+    schema: { name: schemaName, columns },
+    num_rows: data.length,
+    data,
+  };
+
+  const jsonContent = JSON.stringify(parquetPayload, null, 2);
+  const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+  saveAs(blob, filename);
+  return filename;
+}

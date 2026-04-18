@@ -18,16 +18,20 @@ import {
   exportToJSON,
   exportToXML,
   exportToAvro,
+  exportToText,
+  exportToParquet,
 } from '../../utils/fileExport';
 
 const EXPORT_OPTIONS = [
   { id: 'pdf', label: 'PDF', icon: '📄' },
   { id: 'png', label: 'PNG', icon: '🖼️' },
+  { id: 'text', label: 'Text', icon: '📝' },
   { id: 'csv', label: 'CSV', icon: '📊' },
+  { id: 'parquet', label: 'Parquet', icon: '🧱' },
   { id: 'json', label: 'JSON', icon: '{ }' },
-  { id: 'xml', label: 'XML', icon: '< >' },
   { id: 'avro', label: 'Avro', icon: '🔷' },
-  { id: 'word', label: 'Word', icon: '📝' },
+  { id: 'xml', label: 'XML', icon: '< >' },
+  { id: 'word', label: 'Word', icon: '📃' },
 ];
 
 function ExportBar({ contentRef, data, filename = 'export', formats }) {
@@ -55,6 +59,12 @@ function ExportBar({ contentRef, data, filename = 'export', formats }) {
           break;
         case 'word':
           if (element) exportToWord(element, `${name}.doc`);
+          break;
+        case 'text':
+          if (data) exportToText(data, `${name}.txt`);
+          break;
+        case 'parquet':
+          if (data) exportToParquet(data, `${name}.parquet.json`);
           break;
         case 'json':
           if (data) exportToJSON(data, `${name}.json`);

@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
+import {
+  exportToCSV,
+  exportToJSON,
+  exportToXML,
+  exportToAvro,
+  exportToText,
+  exportToParquet,
+} from '../../utils/fileExport';
 
 /**
  * ProductionSupportLibrary — renders L1-L4 support playbooks.
@@ -159,7 +166,20 @@ function ProductionSupportLibrary({ pageTitle, pageSubtitle, coverage, levels, c
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             {[
+              {
+                fmt: 'text',
+                fn: () => exportToText(allRows, csvName.replace(/\.\w+$/, '.txt')),
+                label: 'Text',
+                icon: '📝',
+              },
               { fmt: 'csv', fn: () => exportToCSV(allRows, csvName), label: 'CSV', icon: '📄' },
+              {
+                fmt: 'parquet',
+                fn: () =>
+                  exportToParquet(allRows, csvName.replace(/\.\w+$/, '.parquet.json'), 'Issue'),
+                label: 'Parquet',
+                icon: '🧱',
+              },
               {
                 fmt: 'json',
                 fn: () => exportToJSON(allRows, csvName.replace(/\.\w+$/, '.json')),
@@ -167,17 +187,17 @@ function ProductionSupportLibrary({ pageTitle, pageSubtitle, coverage, levels, c
                 icon: '{ }',
               },
               {
+                fmt: 'avro',
+                fn: () => exportToAvro(allRows, csvName.replace(/\.\w+$/, '.avro.json'), 'Issue'),
+                label: 'Avro',
+                icon: '🔷',
+              },
+              {
                 fmt: 'xml',
                 fn: () =>
                   exportToXML(allRows, csvName.replace(/\.\w+$/, '.xml'), 'issues', 'issue'),
                 label: 'XML',
                 icon: '< >',
-              },
-              {
-                fmt: 'avro',
-                fn: () => exportToAvro(allRows, csvName.replace(/\.\w+$/, '.avro.json'), 'Issue'),
-                label: 'Avro',
-                icon: '🔷',
               },
             ].map((b) => (
               <button

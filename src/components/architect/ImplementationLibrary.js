@@ -1,5 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { exportToCSV, exportToJSON, exportToXML, exportToAvro } from '../../utils/fileExport';
+import {
+  exportToCSV,
+  exportToJSON,
+  exportToXML,
+  exportToAvro,
+  exportToText,
+  exportToParquet,
+} from '../../utils/fileExport';
 
 /**
  * ImplementationLibrary — renders enterprise implementation tables.
@@ -105,7 +112,20 @@ function ImplementationLibrary({
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             {[
+              {
+                fmt: 'text',
+                fn: () => exportToText(rows, csvName.replace(/\.\w+$/, '.txt')),
+                label: 'Text',
+                icon: '📝',
+              },
               { fmt: 'csv', fn: () => exportToCSV(rows, csvName), label: 'CSV', icon: '📄' },
+              {
+                fmt: 'parquet',
+                fn: () =>
+                  exportToParquet(rows, csvName.replace(/\.\w+$/, '.parquet.json'), 'Topic'),
+                label: 'Parquet',
+                icon: '🧱',
+              },
               {
                 fmt: 'json',
                 fn: () => exportToJSON(rows, csvName.replace(/\.\w+$/, '.json')),
@@ -113,16 +133,16 @@ function ImplementationLibrary({
                 icon: '{ }',
               },
               {
-                fmt: 'xml',
-                fn: () => exportToXML(rows, csvName.replace(/\.\w+$/, '.xml'), 'topics', 'topic'),
-                label: 'XML',
-                icon: '< >',
-              },
-              {
                 fmt: 'avro',
                 fn: () => exportToAvro(rows, csvName.replace(/\.\w+$/, '.avro.json'), 'Topic'),
                 label: 'Avro',
                 icon: '🔷',
+              },
+              {
+                fmt: 'xml',
+                fn: () => exportToXML(rows, csvName.replace(/\.\w+$/, '.xml'), 'topics', 'topic'),
+                label: 'XML',
+                icon: '< >',
               },
             ].map((b) => (
               <button

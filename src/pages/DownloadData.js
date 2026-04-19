@@ -1,4 +1,90 @@
 import React, { useState } from 'react';
+import FileFormatRunner from '../components/common/FileFormatRunner';
+
+// ── Real sample data generators per dataset ──────────────────────────
+function generateSampleRows(name, count = 20) {
+  const n = (name || '').toLowerCase();
+  if (n.includes('order') || n.includes('commerce')) {
+    return Array.from({ length: count }, (_, i) => ({
+      order_id: 1000 + i,
+      customer_id: 5000 + Math.floor(Math.random() * 500),
+      product_id: 100 + Math.floor(Math.random() * 200),
+      amount: +(Math.random() * 500 + 10).toFixed(2),
+      quantity: Math.floor(Math.random() * 5) + 1,
+      order_date: `2024-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+      status: ['completed', 'shipped', 'pending', 'cancelled'][Math.floor(Math.random() * 4)],
+    }));
+  }
+  if (n.includes('customer') || n.includes('profile')) {
+    const firstNames = ['Alice', 'Bob', 'Carol', 'David', 'Emma', 'Frank', 'Grace', 'Henry'];
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Jones', 'Brown', 'Davis', 'Miller'];
+    const cities = ['New York', 'Chicago', 'Austin', 'Seattle', 'Denver', 'Miami'];
+    return Array.from({ length: count }, (_, i) => ({
+      customer_id: 1 + i,
+      name: `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`,
+      email: `user${i + 1}@example.com`,
+      phone: `+1-555-${String(1000 + i).padStart(4, '0')}`,
+      city: cities[i % cities.length],
+      age: 18 + Math.floor(Math.random() * 60),
+      segment: ['Premium', 'Standard', 'Basic'][Math.floor(Math.random() * 3)],
+      created_at: `202${Math.floor(Math.random() * 4) + 1}-01-15`,
+    }));
+  }
+  if (n.includes('iot') || n.includes('sensor')) {
+    const locations = ['factory_a', 'factory_b', 'warehouse'];
+    return Array.from({ length: count }, (_, i) => ({
+      device_id: (i % 100) + 1,
+      temperature: +(22 + (Math.random() - 0.5) * 10).toFixed(2),
+      humidity: +(30 + Math.random() * 40).toFixed(2),
+      pressure: +(1013 + (Math.random() - 0.5) * 20).toFixed(2),
+      timestamp: `2024-01-15T${String(Math.floor(i / 6)).padStart(2, '0')}:${String((i * 10) % 60).padStart(2, '0')}:00Z`,
+      location: locations[i % 3],
+    }));
+  }
+  if (n.includes('product') || n.includes('catalog')) {
+    const cats = ['Electronics', 'Clothing', 'Food', 'Books', 'Home', 'Sports'];
+    return Array.from({ length: count }, (_, i) => ({
+      product_id: 1 + i,
+      product_name: `Product_${1 + i}`,
+      category: cats[i % cats.length],
+      price: +(Math.random() * 500 + 5).toFixed(2),
+      cost: +(Math.random() * 200 + 5).toFixed(2),
+      stock_quantity: Math.floor(Math.random() * 1000),
+    }));
+  }
+  if (n.includes('log') || n.includes('web') || n.includes('access')) {
+    const paths = ['index.html', 'api/data', 'products', 'cart', 'checkout'];
+    const codes = [200, 200, 200, 301, 404, 500];
+    return Array.from({ length: count }, (_, i) => ({
+      ip: `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
+      timestamp: `15/Jan/2024:${String(Math.floor(i / 60) % 24).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00 +0000`,
+      method: 'GET',
+      path: `/${paths[i % paths.length]}`,
+      status: codes[i % codes.length],
+      bytes: 100 + Math.floor(Math.random() * 50000),
+    }));
+  }
+  if (n.includes('transaction') || n.includes('financial') || n.includes('fraud')) {
+    const types = ['purchase', 'transfer', 'withdrawal', 'deposit'];
+    const currencies = ['USD', 'EUR', 'GBP'];
+    return Array.from({ length: count }, (_, i) => ({
+      transaction_id: 1 + i,
+      account_id: 1000 + Math.floor(Math.random() * 500),
+      amount: +(Math.random() * 10000).toFixed(2),
+      type: types[i % 4],
+      currency: currencies[i % 3],
+      is_fraud: Math.random() < 0.02,
+      timestamp: `2024-01-15T${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z`,
+    }));
+  }
+  // Default
+  return Array.from({ length: count }, (_, i) => ({
+    id: i + 1,
+    value: `sample_${i + 1}`,
+    amount: +(Math.random() * 1000).toFixed(2),
+    status: ['active', 'pending'][i % 2],
+  }));
+}
 
 const datasets = [
   {
@@ -137,6 +223,14 @@ txns.write.format("delta").partitionBy("type").saveAsTable("catalog.bronze.sampl
 
 function DownloadData() {
   const [expandedId, setExpandedId] = useState(null);
+  const [rowCountById, setRowCountById] = useState({});
+  const [generatedById, setGeneratedById] = useState({});
+
+  const handleGenerate = (dataset) => {
+    const count = rowCountById[dataset.id] || 20;
+    const rows = generateSampleRows(dataset.name, Math.max(1, Math.min(10000, +count)));
+    setGeneratedById({ ...generatedById, [dataset.id]: rows });
+  };
 
   return (
     <div>
@@ -209,8 +303,123 @@ function DownloadData() {
             <span>{expandedId === d.id ? '▼' : '▶'}</span>
           </div>
           {expandedId === d.id && (
-            <div className="code-block" style={{ marginTop: '1rem' }}>
-              {d.code}
+            <div style={{ marginTop: '1rem' }}>
+              <div className="code-block">{d.code}</div>
+
+              {/* Generate Data Panel */}
+              <div
+                style={{
+                  marginTop: '1rem',
+                  padding: '0.9rem 1rem',
+                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                  border: '1px solid #fcd34d',
+                  borderLeft: '4px solid #f59e0b',
+                  borderRadius: '10px',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: '#92400e',
+                    marginBottom: '0.65rem',
+                  }}
+                >
+                  🎲 Generate Sample Data
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '0.65rem',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <label style={{ fontSize: '0.82rem', color: '#78350f', fontWeight: 600 }}>
+                    Rows:
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10000"
+                    value={rowCountById[d.id] || 20}
+                    onChange={(e) => setRowCountById({ ...rowCountById, [d.id]: e.target.value })}
+                    style={{
+                      width: '110px',
+                      padding: '0.35rem 0.55rem',
+                      border: '1px solid #fcd34d',
+                      borderRadius: '6px',
+                      fontSize: '0.85rem',
+                    }}
+                  />
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => handleGenerate(d)}
+                    style={{
+                      background: '#f59e0b',
+                      color: '#fff',
+                      fontWeight: 600,
+                      padding: '0.4rem 1rem',
+                    }}
+                  >
+                    🎲 Generate
+                  </button>
+                  {generatedById[d.id] && (
+                    <span style={{ fontSize: '0.8rem', color: '#78350f' }}>
+                      ✓ Generated {generatedById[d.id].length} rows · ready to download / run /
+                      schedule
+                    </span>
+                  )}
+                </div>
+
+                {/* Preview first 3 rows */}
+                {generatedById[d.id] && (
+                  <div
+                    style={{
+                      marginTop: '0.7rem',
+                      padding: '0.55rem 0.75rem',
+                      background: '#fff',
+                      border: '1px solid #fcd34d',
+                      borderRadius: '6px',
+                      fontFamily: 'Fira Code, Consolas, monospace',
+                      fontSize: '0.72rem',
+                      color: '#78350f',
+                      overflowX: 'auto',
+                    }}
+                  >
+                    {generatedById[d.id].slice(0, 3).map((row, i) => (
+                      <div key={i} style={{ whiteSpace: 'pre', marginBottom: '0.15rem' }}>
+                        {JSON.stringify(row)}
+                      </div>
+                    ))}
+                    {generatedById[d.id].length > 3 && (
+                      <div style={{ color: '#b45309', marginTop: '0.25rem' }}>
+                        ... + {generatedById[d.id].length - 3} more rows
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Download / Run / Schedule */}
+              {generatedById[d.id] && (
+                <div style={{ marginTop: '0.85rem' }}>
+                  <FileFormatRunner
+                    data={generatedById[d.id]}
+                    slug={`sample-${d.id}-${d.name
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .slice(0, 30)}`}
+                    schemaName={d.name.replace(/[^A-Za-z]+/g, '') || 'SampleData'}
+                    tableName={`catalog.bronze.sample_${d.name
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '_')
+                      .slice(0, 30)}`}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

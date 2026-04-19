@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
 import DeepGuide from '../../components/architect/DeepGuide';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 // ─── Assessment Data ───────────────────────────────────────────────────────────
 const DIMENSIONS = [
@@ -676,6 +677,17 @@ function MaturityAssessment() {
           </div>
         </div>
       </div>
+
+      <FileFormatRunner
+        data={DIMENSIONS.map((d) => ({
+          id: d.id,
+          name: d.name,
+          criteria_count: d.criteria?.length || 0,
+        }))}
+        slug="maturity-assessment"
+        schemaName="AssessmentDimension"
+        tableName="catalog.architect.maturity_assessment"
+      />
 
       {/* ── Action Bar ── */}
       <div className="card" style={{ marginBottom: '1rem' }}>

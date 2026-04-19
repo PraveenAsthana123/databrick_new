@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
 import DeepGuide from '../../components/architect/DeepGuide';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 const phases = [
   {
@@ -362,6 +363,20 @@ function DataRoadmap() {
           </div>
         </div>
       </div>
+
+      <FileFormatRunner
+        data={phases.map((p) => ({
+          id: p.id,
+          label: p.label,
+          period: p.period,
+          name: p.name,
+          architecture: p.architecture,
+          interviewAnswer: p.interviewAnswer,
+        }))}
+        slug="data-roadmap"
+        schemaName="RoadmapPhase"
+        tableName="catalog.architect.data_roadmap"
+      />
 
       {/* Tabs + CSV */}
       <div className="card" style={{ marginBottom: '1rem' }}>

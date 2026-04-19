@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
 import DeepGuide from '../../components/architect/DeepGuide';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 const supportLevels = [
   {
@@ -377,6 +378,21 @@ function ProductionSupport() {
           </div>
         </div>
       </div>
+
+      <FileFormatRunner
+        data={supportLevels.map((l) => ({
+          level: l.level,
+          name: l.name,
+          role: l.role,
+          focus: l.focus,
+          sla: l.sla,
+          ownership: l.ownership,
+          interviewAnswer: l.interviewAnswer,
+        }))}
+        slug="production-support"
+        schemaName="SupportLevel"
+        tableName="catalog.architect.production_support"
+      />
 
       {/* Download CSV */}
       <div className="card" style={{ marginBottom: '1rem' }}>

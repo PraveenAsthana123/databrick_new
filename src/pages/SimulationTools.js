@@ -1,4 +1,50 @@
 import React, { useState } from 'react';
+import FileFormatRunner from '../components/common/FileFormatRunner';
+
+// Generate simulation sample data by category/title
+function generateSimulationData(sim, count = 20) {
+  const cat = (sim.category || '').toLowerCase();
+  const title = (sim.title || '').toLowerCase();
+
+  if (cat.includes('ingestion') && title.includes('csv')) {
+    return Array.from({ length: count }, (_, i) => ({
+      batch: Math.floor(i / 10),
+      order_id: 10000 + i,
+      customer_id: Math.floor(Math.random() * 100) + 1,
+      amount: +(Math.random() * 500).toFixed(2),
+      created_at: `2024-01-15T${String(Math.floor(i / 60) % 24).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z`,
+    }));
+  }
+  if (title.includes('stream') || title.includes('event')) {
+    const types = ['click', 'view', 'purchase', 'search'];
+    return Array.from({ length: count }, (_, i) => ({
+      timestamp: `2024-01-15T12:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}Z`,
+      event_id: `evt-${1000 + i}`,
+      event_type: types[i % 4],
+      user_id: Math.floor(Math.random() * 10000) + 1,
+      page_url: `/page/${Math.floor(Math.random() * 20)}`,
+    }));
+  }
+  if (title.includes('cdc')) {
+    const ops = ['I', 'U', 'U', 'D'];
+    return Array.from({ length: count }, (_, i) => ({
+      customer_id: 1000 + i,
+      name: `Customer_${1000 + i}`,
+      email: `user${1000 + i}@example.com`,
+      operation: ops[i % 4],
+      change_ts: `2024-01-15T12:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}Z`,
+    }));
+  }
+  // Default for other categories
+  return Array.from({ length: count }, (_, i) => ({
+    sim_id: i + 1,
+    category: sim.category,
+    metric_name: ['throughput', 'latency', 'error_rate', 'cpu'][i % 4],
+    metric_value: +(Math.random() * 100).toFixed(2),
+    timestamp: `2024-01-15T12:${String(i % 60).padStart(2, '0')}:00Z`,
+    status: ['ok', 'warn', 'ok', 'ok'][i % 4],
+  }));
+}
 
 const simulations = [
   {
@@ -391,8 +437,19 @@ function SimulationTools() {
             <span>{expandedId === s.id ? '▼' : '▶'}</span>
           </div>
           {expandedId === s.id && (
-            <div className="code-block" style={{ marginTop: '1rem' }}>
-              {s.code}
+            <div style={{ marginTop: '1rem' }}>
+              <div className="code-block">{s.code}</div>
+              <div style={{ marginTop: '0.85rem' }}>
+                <FileFormatRunner
+                  data={generateSimulationData(s, 20)}
+                  slug={`sim-${s.id}-${s.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .slice(0, 30)}`}
+                  schemaName="SimulationRecord"
+                  tableName={`catalog.bronze.sim_${s.category.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_${s.id}`}
+                />
+              </div>
             </div>
           )}
         </div>

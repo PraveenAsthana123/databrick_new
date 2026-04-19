@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
 import DeepGuide from '../../components/architect/DeepGuide';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 const maturityLevels = [
   {
@@ -377,6 +378,23 @@ function DataMaturityModel() {
           </div>
         </div>
       </div>
+
+      <FileFormatRunner
+        data={maturityLevels.map((l) => ({
+          level: l.level,
+          name: l.name,
+          focus: l.focus,
+          data: l.areas?.data,
+          pipelines: l.areas?.pipelines,
+          governance: l.areas?.governance,
+          bi: l.areas?.bi,
+          ai: l.areas?.ai,
+          interviewAnswer: l.interviewAnswer,
+        }))}
+        slug="maturity-model"
+        schemaName="MaturityLevel"
+        tableName="catalog.architect.maturity_model"
+      />
 
       {/* Maturity Progression Flow */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>

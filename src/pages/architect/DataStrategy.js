@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
 import DeepDetailView from '../../components/architect/DeepDetailView';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 const challenges = [
   {
@@ -261,6 +262,20 @@ function DataStrategy() {
           </div>
         </div>
       </div>
+
+      <FileFormatRunner
+        data={challenges.map((c) => ({
+          id: c.id,
+          title: c.title,
+          rootCause: c.rootCause,
+          solution: c.solution,
+          artifacts: c.artifacts,
+          interviewAnswer: c.interviewAnswer,
+        }))}
+        slug="data-strategy"
+        schemaName="DataStrategyChallenge"
+        tableName="catalog.architect.data_strategy"
+      />
 
       {/* Search + CSV */}
       <div className="card" style={{ marginBottom: '1rem' }}>

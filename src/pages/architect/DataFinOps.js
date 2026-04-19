@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
 import DeepDetailView from '../../components/architect/DeepDetailView';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 const categories = [
   {
@@ -364,6 +365,23 @@ function DataFinOps() {
           </div>
         </div>
       </div>
+
+      <FileFormatRunner
+        data={categories.flatMap((cat) =>
+          (cat.challenges || []).map((c) => ({
+            category: cat.name,
+            id: c.id,
+            title: c.title,
+            rootCause: c.rootCause,
+            solution: c.solution,
+            artifacts: c.artifacts,
+            interviewAnswer: c.interviewAnswer,
+          }))
+        )}
+        slug="data-finops"
+        schemaName="FinOpsChallenge"
+        tableName="catalog.architect.data_finops"
+      />
 
       {/* Search + Filter + CSV */}
       <div className="card" style={{ marginBottom: '1rem' }}>

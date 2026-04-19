@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
 import DeepDetailView from '../../components/architect/DeepDetailView';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 const challenges = [
   // ─── 1–10: Ingestion & Pipeline ───
@@ -1774,6 +1775,22 @@ function DataArchitectChallenges() {
           </div>
         </div>
       </div>
+
+      <FileFormatRunner
+        data={challenges.map((c) => ({
+          id: c.id,
+          group: c.group,
+          title: c.title,
+          why: c.why,
+          impact: c.impact,
+          solution: c.solution,
+          tools: c.tools,
+          interviewAnswer: c.interviewAnswer,
+        }))}
+        slug="architect-challenges"
+        schemaName="ArchitectChallenge"
+        tableName="catalog.architect.challenges"
+      />
 
       <div className="card" style={{ marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>

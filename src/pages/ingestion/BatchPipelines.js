@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { exportToCSV } from '../../utils/fileExport';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
 
 const batchPipelines = [
   // ─── 1–10: Simple Source-to-Bronze ───
@@ -1084,6 +1085,22 @@ function BatchPipelines() {
                     {p.code}
                   </div>
                 </details>
+
+                {/* Run / Schedule / Download — file format runner */}
+                <div style={{ marginTop: '1rem' }}>
+                  <FileFormatRunner
+                    data={[
+                      ...(p.before || []).map((r) => ({ stage: 'before', ...r })),
+                      ...(p.after || []).map((r) => ({ stage: 'after', ...r })),
+                    ]}
+                    slug={`pipeline-${p.id}-${p.title
+                      .toLowerCase()
+                      .replace(/[^a-z0-9]+/g, '-')
+                      .slice(0, 30)}`}
+                    schemaName="BatchPipeline"
+                    tableName={`catalog.bronze.pipeline_${p.id}`}
+                  />
+                </div>
               </div>
             )}
           </div>

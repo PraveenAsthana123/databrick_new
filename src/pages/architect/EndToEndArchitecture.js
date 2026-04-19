@@ -1,4 +1,6 @@
 import React from 'react';
+import FileFormatRunner from '../../components/common/FileFormatRunner';
+import EnterpriseArchitectDetail from '../../components/architect/EnterpriseArchitectDetail';
 
 const LAYERS = [
   {
@@ -248,6 +250,36 @@ export default function EndToEndArchitecture() {
             </React.Fragment>
           ))}
         </div>
+      </div>
+
+      {/* Enterprise Architect Deep Detail for E2E */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <EnterpriseArchitectDetail
+          title="End-to-End Lakehouse Architecture"
+          description="Databricks Lakehouse + Unity Catalog + BI — complete enterprise reference architecture"
+          domain="strategy"
+        />
+      </div>
+
+      {/* Download / Run / Schedule */}
+      <div style={{ marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+          Architecture Catalog — Download / Run / Schedule
+        </h2>
+        <FileFormatRunner
+          data={LAYERS.map((l) => ({
+            layer_id: l.id,
+            name: l.name,
+            purpose: l.purpose,
+            activities: l.activities,
+            challenges: l.challenges,
+            controls: l.controls,
+            tools: l.tools,
+          }))}
+          slug="e2e-architecture"
+          schemaName="ArchitectureLayer"
+          tableName="catalog.architect.e2e_architecture"
+        />
       </div>
     </div>
   );

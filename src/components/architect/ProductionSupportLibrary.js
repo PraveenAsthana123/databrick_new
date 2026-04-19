@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import FileFormatRunner from '../common/FileFormatRunner';
+import EnterpriseArchitectDetail from './EnterpriseArchitectDetail';
 
 /**
  * ProductionSupportLibrary — renders L1-L4 support playbooks.
@@ -257,20 +258,38 @@ function ProductionSupportLibrary({ pageTitle, pageSubtitle, coverage, levels, c
                   </div>
 
                   {isOpen && (
-                    <div
-                      style={{
-                        marginTop: '1rem',
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                        gap: '0.7rem',
-                      }}
-                    >
-                      <Tile label="Real Scenario" color="#6366f1" bg="#eef2ff" value={r.scenario} />
-                      <Tile label="Business Impact" color="#ef4444" bg="#fef2f2" value={r.impact} />
-                      <Tile label="Root Cause" color="#f97316" bg="#fff7ed" value={r.rootCause} />
-                      <Tile label="Resolution" color="#16a34a" bg="#f0fdf4" value={r.resolution} />
-                      <Tile label="Tools / Logs" color="#0891b2" bg="#ecfeff" value={r.tools} />
-                    </div>
+                    <>
+                      <div
+                        style={{
+                          marginTop: '1rem',
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                          gap: '0.7rem',
+                        }}
+                      >
+                        <Tile
+                          label="Real Scenario"
+                          color="#6366f1"
+                          bg="#eef2ff"
+                          value={r.scenario}
+                        />
+                        <Tile
+                          label="Business Impact"
+                          color="#ef4444"
+                          bg="#fef2f2"
+                          value={r.impact}
+                        />
+                        <Tile label="Root Cause" color="#f97316" bg="#fff7ed" value={r.rootCause} />
+                        <Tile
+                          label="Resolution"
+                          color="#16a34a"
+                          bg="#f0fdf4"
+                          value={r.resolution}
+                        />
+                        <Tile label="Tools / Logs" color="#0891b2" bg="#ecfeff" value={r.tools} />
+                      </div>
+                      <EnterpriseArchitectDetail title={r.issueType} description={r.description} />
+                    </>
                   )}
                 </div>
               );

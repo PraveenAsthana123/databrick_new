@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import FileFormatRunner from '../common/FileFormatRunner';
+import EnterpriseArchitectDetail from './EnterpriseArchitectDetail';
 
 /**
  * ImplementationLibrary — renders enterprise implementation tables.
@@ -175,50 +176,56 @@ function ImplementationLibrary({
             </div>
 
             {isOpen && (
-              <div
-                style={{
-                  marginTop: '1.15rem',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                  gap: '0.8rem',
-                }}
-              >
-                {TILE_COLORS.map((tile) => (
-                  <div
-                    key={tile.field}
-                    style={{
-                      background: tile.bg,
-                      border: `1px solid ${tile.border}`,
-                      borderLeft: `4px solid ${tile.fg}`,
-                      borderRadius: '10px',
-                      padding: '0.85rem 1rem',
-                    }}
-                  >
+              <>
+                {/* 11 Implementation Dimensions */}
+                <div
+                  style={{
+                    marginTop: '1.15rem',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '0.8rem',
+                  }}
+                >
+                  {TILE_COLORS.map((tile) => (
                     <div
+                      key={tile.field}
                       style={{
-                        fontSize: '0.68rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: tile.fg,
-                        marginBottom: '0.4rem',
+                        background: tile.bg,
+                        border: `1px solid ${tile.border}`,
+                        borderLeft: `4px solid ${tile.fg}`,
+                        borderRadius: '10px',
+                        padding: '0.85rem 1rem',
                       }}
                     >
-                      {tile.label}
+                      <div
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                          color: tile.fg,
+                          marginBottom: '0.4rem',
+                        }}
+                      >
+                        {tile.label}
+                      </div>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: '0.85rem',
+                          lineHeight: 1.6,
+                          color: '#1a1a1a',
+                        }}
+                      >
+                        {r[tile.field] || '—'}
+                      </p>
                     </div>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: '0.85rem',
-                        lineHeight: 1.6,
-                        color: '#1a1a1a',
-                      }}
-                    >
-                      {r[tile.field] || '—'}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+
+                {/* Enterprise Architect — Full Detail (Selection/Rejection/EdgeCases/Strategy/Sequence/TestPlan/TechStack) */}
+                <EnterpriseArchitectDetail title={r.topic} description={r.definition} />
+              </>
             )}
           </div>
         );

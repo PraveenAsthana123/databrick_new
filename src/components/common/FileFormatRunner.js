@@ -99,8 +99,62 @@ function FileFormatRunner({ data, slug = 'data', schemaName = 'Record', tableNam
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState(null);
 
+  // Scheduling state
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [schedule, setSchedule] = useState({
+    frequency: 'daily',
+    time: '02:00',
+    cluster: 'job-cluster-small',
+    retries: 3,
+    timeout: 3600,
+    notify: true,
+  });
+  const [scheduled, setScheduled] = useState(null);
+
   const fmt = FORMAT_OPTIONS.find((f) => f.id === selectedFormat) || FORMAT_OPTIONS[1];
   const tbl = tableName || `catalog.bronze.${slug.replace(/-/g, '_')}`;
+
+  const cronFor = (freq, time) => {
+    const [hh, mm] = (time || '02:00').split(':');
+    switch (freq) {
+      case 'hourly':
+        return '0 0 * * * ?';
+      case 'daily':
+        return `0 ${mm} ${hh} * * ?`;
+      case 'weekly':
+        return `0 ${mm} ${hh} ? * MON`;
+      case 'monthly':
+        return `0 ${mm} ${hh} 1 * ?`;
+      case 'every-5-min':
+        return '0 */5 * * * ?';
+      case 'every-15-min':
+        return '0 */15 * * * ?';
+      default:
+        return '0 0 2 * * ?';
+    }
+  };
+
+  const handleSchedule = () => {
+    const jobId = `job_${Math.floor(Math.random() * 1000000)
+      .toString()
+      .padStart(6, '0')}`;
+    const nextRun = new Date(Date.now() + Math.floor(Math.random() * 3600 * 1000) + 60000);
+    setScheduled({
+      jobId,
+      jobName: `${slug}_${selectedFormat}_pipeline`,
+      status: 'SCHEDULED',
+      cron: cronFor(schedule.frequency, schedule.time),
+      frequency: schedule.frequency,
+      time: schedule.time,
+      cluster: schedule.cluster,
+      retries: schedule.retries,
+      timeout: schedule.timeout,
+      notify: schedule.notify,
+      nextRun: nextRun.toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+      createdAt: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC',
+    });
+    setShowScheduler(false);
+  };
 
   const handleRun = () => {
     setRunning(true);
@@ -226,10 +280,308 @@ function FileFormatRunner({ data, slug = 'data', schemaName = 'Record', tableNam
         >
           ⬇ Download {fmt.label}
         </button>
+        <button
+          className="btn btn-sm"
+          onClick={() => setShowScheduler(!showScheduler)}
+          style={{
+            background: showScheduler ? '#7c3aed' : '#f5f3ff',
+            color: showScheduler ? '#fff' : '#6d28d9',
+            border: '1px solid #ddd6fe',
+            fontWeight: 600,
+          }}
+        >
+          📅 Schedule Job
+        </button>
         <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: 'auto' }}>
           {data.length} rows · {fmt.label} format
         </span>
       </div>
+
+      {/* Scheduler Panel */}
+      {showScheduler && (
+        <div
+          style={{
+            margin: '0 1rem 0.75rem',
+            padding: '1rem 1.15rem',
+            background: 'linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%)',
+            border: '1px solid #ddd6fe',
+            borderLeft: '4px solid #7c3aed',
+            borderRadius: '10px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.75rem',
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: '#6d28d9',
+              marginBottom: '0.85rem',
+            }}
+          >
+            📅 Schedule as Background Job — Databricks Workflow
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: '0.75rem',
+              marginBottom: '0.85rem',
+            }}
+          >
+            <Field label="Frequency">
+              <select
+                value={schedule.frequency}
+                onChange={(e) => setSchedule({ ...schedule, frequency: e.target.value })}
+                style={selectStyle}
+              >
+                <option value="every-5-min">Every 5 minutes</option>
+                <option value="every-15-min">Every 15 minutes</option>
+                <option value="hourly">Hourly</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly (Mon)</option>
+                <option value="monthly">Monthly (1st)</option>
+              </select>
+            </Field>
+
+            <Field label="Run Time (UTC)">
+              <input
+                type="time"
+                value={schedule.time}
+                onChange={(e) => setSchedule({ ...schedule, time: e.target.value })}
+                style={selectStyle}
+              />
+            </Field>
+
+            <Field label="Cluster">
+              <select
+                value={schedule.cluster}
+                onChange={(e) => setSchedule({ ...schedule, cluster: e.target.value })}
+                style={selectStyle}
+              >
+                <option value="job-cluster-small">Job Cluster — Small (2 nodes)</option>
+                <option value="job-cluster-medium">Job Cluster — Medium (4 nodes)</option>
+                <option value="job-cluster-large">Job Cluster — Large (8 nodes)</option>
+                <option value="serverless">Serverless (auto-scale)</option>
+                <option value="existing-shared">Existing — shared cluster</option>
+              </select>
+            </Field>
+
+            <Field label="Max Retries">
+              <input
+                type="number"
+                min="0"
+                max="10"
+                value={schedule.retries}
+                onChange={(e) => setSchedule({ ...schedule, retries: +e.target.value })}
+                style={selectStyle}
+              />
+            </Field>
+
+            <Field label="Timeout (seconds)">
+              <input
+                type="number"
+                min="60"
+                step="60"
+                value={schedule.timeout}
+                onChange={(e) => setSchedule({ ...schedule, timeout: +e.target.value })}
+                style={selectStyle}
+              />
+            </Field>
+
+            <Field label="Email on Failure">
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.4rem 0',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={schedule.notify}
+                  onChange={(e) => setSchedule({ ...schedule, notify: e.target.checked })}
+                  style={{ accentColor: '#7c3aed' }}
+                />
+                <span style={{ fontSize: '0.82rem', color: '#3b0764' }}>Notify on-call</span>
+              </label>
+            </Field>
+          </div>
+
+          {/* Cron preview */}
+          <div
+            style={{
+              padding: '0.55rem 0.8rem',
+              background: '#1e1b4b',
+              color: '#c7d2fe',
+              borderRadius: '6px',
+              fontFamily: 'Fira Code, Consolas, monospace',
+              fontSize: '0.78rem',
+              marginBottom: '0.85rem',
+            }}
+          >
+            <span style={{ color: '#a5b4fc', fontWeight: 700 }}>cron:</span>{' '}
+            {cronFor(schedule.frequency, schedule.time)}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              className="btn btn-sm"
+              onClick={handleSchedule}
+              style={{
+                background: '#7c3aed',
+                color: '#fff',
+                fontWeight: 600,
+                padding: '0.5rem 1rem',
+              }}
+            >
+              ✓ Create Scheduled Job
+            </button>
+            <button className="btn btn-sm btn-secondary" onClick={() => setShowScheduler(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Scheduled Job Confirmation */}
+      {scheduled && (
+        <div
+          style={{
+            margin: '0 1rem 0.75rem',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            border: '1px solid #c4b5fd',
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%)',
+              padding: '0.6rem 0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.75rem',
+              flexWrap: 'wrap',
+              borderBottom: '1px solid #c4b5fd',
+            }}
+          >
+            <span style={{ color: '#6d28d9', fontWeight: 700, fontSize: '0.82rem' }}>
+              📅 {scheduled.status}
+            </span>
+            <span style={{ fontSize: '0.78rem', color: '#5b21b6' }}>
+              {scheduled.jobId} · {scheduled.frequency} @ {scheduled.time} UTC
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#5b21b6' }}>
+              Next run: <strong>{scheduled.nextRun}</strong>
+            </span>
+          </div>
+
+          <div style={{ padding: '0.75rem 0.9rem', background: '#fff' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '0.5rem',
+                marginBottom: '0.8rem',
+              }}
+            >
+              <InfoTile label="Job Name" value={scheduled.jobName} mono />
+              <InfoTile label="Cluster" value={scheduled.cluster} />
+              <InfoTile label="Max Retries" value={String(scheduled.retries)} />
+              <InfoTile label="Timeout" value={`${scheduled.timeout}s`} />
+              <InfoTile label="Cron" value={scheduled.cron} mono />
+              <InfoTile label="Alerts" value={scheduled.notify ? 'Email on failure ✓' : 'Off'} />
+            </div>
+
+            {/* Databricks Jobs API JSON */}
+            <div style={{ marginBottom: '0.65rem' }}>
+              <div
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  color: '#6d28d9',
+                  letterSpacing: '0.04em',
+                  marginBottom: '0.3rem',
+                }}
+              >
+                Databricks Jobs API — POST /api/2.1/jobs/create
+              </div>
+              <pre
+                style={{
+                  margin: 0,
+                  padding: '0.65rem 0.85rem',
+                  background: '#1e293b',
+                  color: '#e0e7ff',
+                  borderRadius: '6px',
+                  fontFamily: 'Fira Code, Consolas, monospace',
+                  fontSize: '0.75rem',
+                  lineHeight: 1.55,
+                  whiteSpace: 'pre-wrap',
+                  overflowX: 'auto',
+                }}
+              >
+                {JSON.stringify(
+                  {
+                    name: scheduled.jobName,
+                    schedule: {
+                      quartz_cron_expression: scheduled.cron,
+                      timezone_id: 'UTC',
+                      pause_status: 'UNPAUSED',
+                    },
+                    job_clusters: [
+                      {
+                        job_cluster_key: scheduled.cluster,
+                        new_cluster: {
+                          node_type_id: 'Standard_DS3_v2',
+                          num_workers: 2,
+                          spark_version: '14.3.x-scala2.12',
+                        },
+                      },
+                    ],
+                    tasks: [
+                      {
+                        task_key: `${slug}_task`,
+                        notebook_task: { notebook_path: `/Workflows/${slug}`, source: 'WORKSPACE' },
+                        job_cluster_key: scheduled.cluster,
+                        timeout_seconds: scheduled.timeout,
+                        max_retries: scheduled.retries,
+                      },
+                    ],
+                    email_notifications: scheduled.notify
+                      ? { on_failure: ['oncall@company.com'] }
+                      : {},
+                    format: 'MULTI_TASK',
+                  },
+                  null,
+                  2
+                )}
+              </pre>
+            </div>
+
+            {/* Databricks CLI command */}
+            <div>
+              <div
+                style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  color: '#16a34a',
+                  letterSpacing: '0.04em',
+                  marginBottom: '0.3rem',
+                }}
+              >
+                Databricks CLI Equivalent
+              </div>
+              <div className="code-block" style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}>
+                databricks jobs create --json-file {scheduled.jobName}.json
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Run Result */}
       {runResult && (
@@ -339,6 +691,72 @@ function FileFormatRunner({ data, slug = 'data', schemaName = 'Record', tableNam
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Sub-components & styles ──────────────────────────────────────────
+const selectStyle = {
+  width: '100%',
+  padding: '0.4rem 0.55rem',
+  border: '1px solid #ddd6fe',
+  borderRadius: '6px',
+  fontSize: '0.82rem',
+  color: '#3b0764',
+  background: '#fff',
+};
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <div
+        style={{
+          fontSize: '0.68rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          color: '#6d28d9',
+          letterSpacing: '0.04em',
+          marginBottom: '0.3rem',
+        }}
+      >
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function InfoTile({ label, value, mono }) {
+  return (
+    <div
+      style={{
+        padding: '0.45rem 0.65rem',
+        background: '#faf5ff',
+        border: '1px solid #e9d5ff',
+        borderRadius: '6px',
+      }}
+    >
+      <div
+        style={{
+          fontSize: '0.62rem',
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          color: '#6d28d9',
+          letterSpacing: '0.04em',
+          marginBottom: '0.15rem',
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: '0.8rem',
+          color: '#3b0764',
+          fontFamily: mono ? 'Fira Code, Consolas, monospace' : 'inherit',
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }

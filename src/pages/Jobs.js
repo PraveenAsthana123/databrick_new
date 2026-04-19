@@ -1,4 +1,5 @@
 import React from 'react';
+import FileFormatRunner from '../components/common/FileFormatRunner';
 
 const jobs = [
   {
@@ -156,6 +157,31 @@ function Jobs() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div style={{ marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+          Schedule / Run / Download — Jobs
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.85rem' }}>
+          Select a format to download the jobs catalog, run a command to simulate execution, or
+          schedule the jobs catalog refresh as a Databricks Workflow.
+        </p>
+        <FileFormatRunner
+          data={jobs.map((j) => ({
+            job_id: `job_${String(j.id).padStart(6, '0')}`,
+            name: j.name,
+            schedule_cron: j.schedule,
+            next_run: j.nextRun,
+            last_run: j.lastRun,
+            duration: j.duration,
+            status: j.status,
+            cluster: j.cluster,
+          }))}
+          slug="jobs-catalog"
+          schemaName="JobsCatalog"
+          tableName="catalog.platform.jobs_catalog"
+        />
       </div>
     </div>
   );

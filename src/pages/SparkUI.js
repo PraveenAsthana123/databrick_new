@@ -1,4 +1,5 @@
 import React from 'react';
+import FileFormatRunner from '../components/common/FileFormatRunner';
 
 const stages = [
   {
@@ -216,6 +217,44 @@ function SparkUI() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div style={{ marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
+          Export Spark Metrics — Stages + Executors
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.85rem' }}>
+          Download the stages and executor metrics as Text/CSV/Parquet/JSON/Avro/XML, run a Spark
+          History Server query command, or schedule as a recurring metrics-collection job.
+        </p>
+        <FileFormatRunner
+          data={[
+            ...stages.map((s) => ({
+              entity: 'stage',
+              stage_id: s.id,
+              name: s.name,
+              tasks: s.tasks,
+              duration: s.duration,
+              input: s.input,
+              output: s.output,
+              shuffle: s.shuffle,
+              status: s.status,
+            })),
+            ...executors.map((e) => ({
+              entity: 'executor',
+              executor_id: e.id,
+              host: e.host,
+              cores: e.cores,
+              memory: e.memory,
+              active_tasks: e.activeTasks,
+              completed_tasks: e.completedTasks,
+              failed_tasks: e.failedTasks,
+            })),
+          ]}
+          slug="spark-metrics"
+          schemaName="SparkMetrics"
+          tableName="catalog.platform.spark_metrics"
+        />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import FileFormatRunner from '../components/common/FileFormatRunner';
 
 const clusterConfigs = [
   {
@@ -166,9 +167,31 @@ function Clusters() {
             <span>{expandedId === ex.id ? '▼' : '▶'}</span>
           </div>
           {expandedId === ex.id && (
-            <div className="code-block" style={{ marginTop: '0.75rem' }}>
-              {ex.code}
-            </div>
+            <>
+              <div className="code-block" style={{ marginTop: '0.75rem' }}>
+                {ex.code}
+              </div>
+              <div style={{ marginTop: '0.85rem' }}>
+                <FileFormatRunner
+                  data={clusterConfigs.map((c) => ({
+                    cluster_id: `cl-${c.id}`,
+                    name: c.name,
+                    type: c.type,
+                    workers: c.workers,
+                    instance: c.instance,
+                    runtime: c.runtime,
+                    autoscale: c.autoscale,
+                    status: c.status,
+                  }))}
+                  slug={`cluster-${ex.id}-${ex.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .slice(0, 30)}`}
+                  schemaName="ClusterConfig"
+                  tableName={`catalog.platform.cluster_${ex.id}`}
+                />
+              </div>
+            </>
           )}
         </div>
       ))}

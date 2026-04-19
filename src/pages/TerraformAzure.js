@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import FileFormatRunner from '../components/common/FileFormatRunner';
 
 const terraformScenarios = [
   {
@@ -2060,8 +2061,136 @@ const tabs = [
   { key: 'desktop', label: 'Desktop / Local Dev', badge: '6', scenarios: desktopScenarios },
 ];
 
+// Generate multiple IaC approaches per scenario (Terraform HCL, Bicep, ARM, CLI, Pulumi)
+function generateApproaches(scenario) {
+  const hcl = scenario.code || '# Terraform HCL';
+
+  const bicep = `// Bicep — ${scenario.title}
+param environment string = 'dev'
+param location string = 'eastus'
+
+resource workspace 'Microsoft.Databricks/workspaces@2023-02-01' = {
+  name: 'dbx-\${environment}'
+  location: location
+  sku: { name: 'premium' }
+  properties: {
+    managedResourceGroupId: subscriptionResourceId('Microsoft.Resources/resourceGroups', 'managed-dbx-\${environment}')
+  }
+  tags: { env: environment, owner: 'data-platform' }
+}`;
+
+  const arm = `{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": { "type": "string", "defaultValue": "dev" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Databricks/workspaces",
+      "apiVersion": "2023-02-01",
+      "name": "[concat('dbx-', parameters('environment'))]",
+      "location": "[resourceGroup().location]",
+      "sku": { "name": "premium" },
+      "properties": { "managedResourceGroupId": "[subscriptionResourceId('Microsoft.Resources/resourceGroups', concat('managed-dbx-', parameters('environment')))]" }
+    }
+  ]
+}`;
+
+  const cli = `# Azure CLI — ${scenario.title}
+az databricks workspace create \\
+  --resource-group rg-databricks-dev \\
+  --name dbx-dev \\
+  --location eastus \\
+  --sku premium \\
+  --tags env=dev owner=data-platform
+
+# Databricks CLI — register workspace
+databricks configure --token
+databricks workspace list`;
+
+  const pulumi = `// Pulumi TypeScript — ${scenario.title}
+import * as azure from "@pulumi/azure-native";
+import * as databricks from "@pulumi/databricks";
+
+const rg = new azure.resources.ResourceGroup("rg-dbx", { location: "eastus" });
+
+const workspace = new azure.databricks.Workspace("dbx-dev", {
+  resourceGroupName: rg.name,
+  location: rg.location,
+  sku: { name: "premium" },
+  managedResourceGroupId: \`/subscriptions/\${config.subscriptionId}/resourceGroups/managed-dbx-dev\`,
+  tags: { env: "dev", owner: "data-platform" },
+});
+
+export const workspaceUrl = workspace.workspaceUrl;`;
+
+  // Terragrunt wrapper
+  const terragrunt = `# terragrunt.hcl — ${scenario.title}
+include "root" {
+  path = find_in_parent_folders()
+}
+
+terraform {
+  source = "git::ssh://git@github.com/org/tf-modules.git//databricks?ref=v1.2.0"
+}
+
+inputs = {
+  environment     = "dev"
+  location        = "eastus"
+  subscription_id = get_env("ARM_SUBSCRIPTION_ID")
+  tenant_id       = get_env("ARM_TENANT_ID")
+}
+
+remote_state {
+  backend = "azurerm"
+  config = {
+    resource_group_name  = "terraform-state-rg"
+    storage_account_name = "tfstatedbx"
+    container_name       = "tfstate"
+    key                  = "\${path_relative_to_include()}/terraform.tfstate"
+  }
+}`;
+
+  return [
+    { id: 'hcl', label: 'Terraform HCL', icon: '🏗️', lang: 'hcl', code: hcl },
+    { id: 'bicep', label: 'Azure Bicep', icon: '☁️', lang: 'bicep', code: bicep },
+    { id: 'arm', label: 'ARM Template', icon: '📋', lang: 'json', code: arm },
+    { id: 'cli', label: 'Azure / Databricks CLI', icon: '⌨️', lang: 'bash', code: cli },
+    { id: 'pulumi', label: 'Pulumi (TypeScript)', icon: '🎯', lang: 'ts', code: pulumi },
+    { id: 'terragrunt', label: 'Terragrunt', icon: '🧱', lang: 'hcl', code: terragrunt },
+  ];
+}
+
+// Generate sample resource data for downloads/run/schedule
+function generateResourceData(scenario) {
+  const envs = ['dev', 'qa', 'prod'];
+  return envs.map((env, i) => ({
+    resource_id: `dbx-workspace-${env}-${1000 + scenario.id}`,
+    resource_type: 'Microsoft.Databricks/workspaces',
+    name: `dbx-${env}`,
+    environment: env,
+    location: 'eastus',
+    sku: env === 'prod' ? 'premium' : 'standard',
+    status: 'ACTIVE',
+    managed_rg: `managed-dbx-${env}`,
+    tags_owner: 'data-platform',
+    created_at: `2024-01-${15 + i}T08:00:00Z`,
+    drift_detected: env === 'prod' ? false : Math.random() > 0.7,
+    monthly_cost_usd: env === 'prod' ? 12500 : env === 'qa' ? 3200 : 850,
+  }));
+}
+
 function ScenarioCard({ scenario }) {
   const [expanded, setExpanded] = useState(false);
+  const [activeApproach, setActiveApproach] = useState('hcl');
+  const approaches = generateApproaches(scenario);
+  const current = approaches.find((a) => a.id === activeApproach) || approaches[0];
+  const resourceData = generateResourceData(scenario);
+  const slug = `terraform-${scenario.id}-${(scenario.title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 30)}`;
 
   return (
     <div className="card" style={{ marginBottom: '16px' }}>
@@ -2087,9 +2216,65 @@ function ScenarioCard({ scenario }) {
       </div>
       {expanded && (
         <div style={{ padding: '0 16px 16px' }}>
-          <pre className="code-block">
-            <code>{scenario.code}</code>
+          {/* Multi-approach tabs */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '0.4rem',
+              flexWrap: 'wrap',
+              marginBottom: '0.6rem',
+              padding: '0.5rem',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                color: '#64748b',
+                padding: '0.3rem 0.5rem',
+              }}
+            >
+              Approach:
+            </span>
+            {approaches.map((a) => {
+              const isActive = a.id === activeApproach;
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => setActiveApproach(a.id)}
+                  style={{
+                    padding: '0.35rem 0.75rem',
+                    border: isActive ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+                    background: isActive ? '#eff6ff' : '#fff',
+                    color: isActive ? '#1e40af' : '#334155',
+                    fontWeight: isActive ? 700 : 500,
+                    fontSize: '0.78rem',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {a.icon} {a.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Selected approach code */}
+          <pre className="code-block" style={{ marginBottom: '0.85rem' }}>
+            <code>{current.code}</code>
           </pre>
+
+          {/* Run / Schedule / Download */}
+          <FileFormatRunner
+            data={resourceData}
+            slug={slug}
+            schemaName="TerraformResource"
+            tableName={`catalog.bronze.iac_resource_${scenario.id}`}
+          />
         </div>
       )}
     </div>
